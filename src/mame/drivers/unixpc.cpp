@@ -51,7 +51,7 @@ public:
 		m_tcr(*this, "tcr"),
 		m_int02(*this, "int02"),
 		m_ram(*this, RAM_TAG),
-		m_wd2797(*this, "wd2797"),
+		m_fdc(*this, "wd2797"),
 		m_floppy(*this, "wd2797:0:525dd"),
 		m_hdc(*this, "hdc"),
 		m_hdr0(*this, "hdc:0"),
@@ -75,6 +75,7 @@ private:
 	DECLARE_WRITE_LINE_MEMBER(error_enable_w);
 	DECLARE_WRITE_LINE_MEMBER(parity_enable_w);
 	DECLARE_WRITE_LINE_MEMBER(bpplus_w);
+	DECLARE_WRITE_LINE_MEMBER(dma_reading_w);
 	uint16_t ram_mmu_r(offs_t offset);
 	void ram_mmu_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t gsr_r();
@@ -82,6 +83,7 @@ private:
 	uint16_t tsr_r();
 	uint16_t rtc_r();
 	void rtc_w(uint16_t data);
+	void csr_w(uint16_t data);
 	uint16_t diskdma_size_r();
 	void diskdma_size_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void diskdma_ptr_w(offs_t offset, uint16_t data);
@@ -100,7 +102,7 @@ private:
 	required_device<ls259_device> m_tcr;
 	required_device<input_merger_device> m_int02;
 	required_device<ram_device> m_ram;
-	required_device<wd2797_device> m_wd2797;
+	required_device<wd2797_device> m_fdc;
 	required_device<floppy_image_device> m_floppy;
 	required_device<wd1010_device> m_hdc;
 	required_device<harddisk_image_device> m_hdr0;
@@ -111,8 +113,19 @@ private:
 
 	uint16_t *m_ramptr;
 	uint32_t m_ramsize;
-	uint16_t m_diskdmasize;
-	uint32_t m_diskdmaptr;
+	uint16_t m_diskdmacount;
+	uint32_t m_diskdmaptr;	 // aka DMA address
+
+	// DMA direction
+	bool		m_idmarw;
+	// DMA enable
+	bool		m_dmaen;
+
+	// Registers
+	uint16_t	m_gsr;
+	uint16_t	m_bsr0;
+	uint16_t	m_bsr1;
+
 	bool m_fdc_intrq;
 	bool m_hdc_intrq;
 };
@@ -124,30 +137,104 @@ private:
 
 void unixpc_state::gcr_w(offs_t offset, uint16_t data)
 {
+	// calls the individual bit handlers (romlmap_w, error_enable_w, ...)
 	m_gcr->write_bit(offset >> 11, BIT(data, 15));
 }
 
 WRITE_LINE_MEMBER(unixpc_state::romlmap_w)
 {
+	logerror("romlmap_w: %d\n", state);
 	m_ramrombank->set_bank(state ? 1 : 0);
 }
 
+//#define COMBINE_DATA(varptr)            (*(varptr) = (*(varptr) & ~mem_mask) | (data & mem_mask))
+
+static constexpr unsigned MMU_MAX_PAGES = 1024;
+static constexpr uint16_t MMU_WRITE_ENABLE = 0x8000;
+static constexpr uint16_t MMU_STATUS_MASK  = 0x6000;
+static constexpr uint16_t MMU_STATUS_NOT_PRESENT = 0x0000;
+static constexpr uint16_t MMU_STATUS_PRESENT_NOT_ACCESSED = 0x2000;
+static constexpr uint16_t MMU_STATUS_ACCESSED_NOT_WRITTEN = 0x4000;
+static constexpr uint16_t MMU_STATUS_ACCESSED_WRITTEN = 0x6000;
+
 uint16_t unixpc_state::ram_mmu_r(offs_t offset)
 {
-	// TODO: MMU translation
-	if (offset > m_ramsize)
+	uint16_t page = (offset >> 11) & 0x3ff;
+	uint16_t mapentry = m_mapram[page];
+
+#if 0
+	uint8_t fc = m_maincpu->get_fc();
+	// only supervisor (kernel) can access low 512KB virtual address space
+	if ((offset < ((512*1024)>>1)) && (fc != M68K_FC_SUPERVISOR_DATA) && (fc != M68K_FC_SUPERVISOR_PROGRAM))
 	{
-		return 0xffff;
+		// need to throw MEM_KERNEL error
+		fatalerror("mmu: user mode access to lower 512K, need to generate a fault\n");
 	}
-	return m_ramptr[offset];
+#endif
+
+	if ((mapentry & MMU_STATUS_MASK) == MMU_STATUS_NOT_PRESENT)
+	{
+		// need to throw page fault -- "else" statement should probably not be conditional
+		logerror("PAGEFAULT - virtual addr [0x%06x] read, page 0x%x\n", offset, page);
+		return 0xFFFF;
+	}
+	else
+	{
+		uint32_t addr = (offset & 0x7ff) | ((mapentry & 0x3ff) << 11);
+		//logerror("virtual addr [0x%06x] read, data = %04x\n", offset << 1, m_ramptr[addr]);
+		//logerror("mmu_r: mapentry %04x translated to phys addr 0x%06x\n", mapentry, addr);
+
+		// indicate page has been read
+		if ((mapentry & MMU_STATUS_MASK) == MMU_STATUS_PRESENT_NOT_ACCESSED)
+		{
+			m_mapram[page] &= ~MMU_STATUS_MASK;
+			m_mapram[page] |= MMU_STATUS_ACCESSED_NOT_WRITTEN;
+		}
+		
+		return m_ramptr[addr];
+	}
 }
 
 void unixpc_state::ram_mmu_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
-	// TODO: MMU translation
-	if (offset < m_ramsize)
+	uint16_t page = (offset >> 11) & 0x3ff;
+	uint16_t mapentry = m_mapram[page];
+
+	//logerror("virtual addr [0x%06x] write = %04x (mem_mask %04x)\n", offset << 1, data, mem_mask);
+	
+#if 0
+	uint8_t fc = m_maincpu->get_fc();
+	// only supervisor (kernel) can access low 512KB virtual address space
+	if ((offset < ((512*1024)>>1)) && (fc != M68K_FC_SUPERVISOR_DATA) && (fc != M68K_FC_SUPERVISOR_PROGRAM))
 	{
-		COMBINE_DATA(&m_ramptr[offset]);
+		// need to throw MEM_KERNEL error
+		fatalerror("mmu: user mode access to lower 512K, need to generate a fault\n");
+	}
+#endif
+
+	if ((mapentry & MMU_STATUS_MASK) == MMU_STATUS_NOT_PRESENT)
+	{
+		// need to throw page fault -- "else" statement should probably not be conditional
+		logerror("PAGEFAULT - virtual addr [0x%06x] read, page 0x%x\n", offset, page);
+	}
+	else
+	{
+		uint32_t addr = (offset & 0x7ff) | ((mapentry & 0x3ff) << 11);
+		//logerror("mmu_w: mapentry %04x translated to phys addr 0x%06x\n", mapentry, addr);
+#if 0
+		// check Write Enable page bit, this can actually just be ignored in FreeBee
+		if (!(mapentry & MMU_WRITE_ENABLE) && (fc != M68K_FC_SUPERVISOR_PROGRAM) && (fc != M68K_FC_SUPERVISOR_DATA))
+		{
+			fatalerror("mmu: write protection violation, need to throw a fault\n");
+		}
+#endif
+		// indicate page has been written
+		m_mapram[page] |= MMU_STATUS_ACCESSED_WRITTEN;
+
+		COMBINE_DATA(&m_ramptr[addr]);
+		//m_ramptr[addr] = (m_ramptr[addr] & ~mem_mask) | (data & mem_mask);
+		//m_ramptr[addr] = (m_ramptr[addr] & ~0xFFFF) | (data & 0xFFFF);
+		//m_ramptr[addr] = data;
 	}
 }
 
@@ -159,7 +246,10 @@ void unixpc_state::machine_start()
 
 void unixpc_state::machine_reset()
 {
-	disk_control_w(0);
+	//disk_control_w(0);
+	
+	// double density (MFM) enable
+	m_fdc->dden_w(1);
 }
 
 WRITE_LINE_MEMBER(unixpc_state::error_enable_w)
@@ -177,13 +267,20 @@ WRITE_LINE_MEMBER(unixpc_state::bpplus_w)
 	logerror("bpplus_w: %d\n", state);
 }
 
+WRITE_LINE_MEMBER(unixpc_state::dma_reading_w)
+{
+	logerror("dma_reading: %d\n", state);
+}
+
+
 /***************************************************************************
     MISC
 ***************************************************************************/
 
 uint16_t unixpc_state::gsr_r()
 {
-	return 0;
+	// needs to be updated appropriately when pagefault occurs
+	return m_gsr;
 }
 
 void unixpc_state::tcr_w(offs_t offset, uint16_t data)
@@ -206,6 +303,14 @@ void unixpc_state::rtc_w(uint16_t data)
 	logerror("rtc_w: %04x\n", data);
 }
 
+void unixpc_state::csr_w(uint16_t data)
+{
+	logerror("csr_w: %04x\n", data);
+	m_gsr = 0xFFFF;
+	m_bsr0 = 0xFFFF;
+	m_bsr1 = 0xFFFF;
+}
+
 uint16_t unixpc_state::line_printer_r()
 {
 	uint16_t data = 0;
@@ -214,6 +319,7 @@ uint16_t unixpc_state::line_printer_r()
 	data |= 1 << 1; // no parity error
 	data |= m_hdc_intrq ? 1<<2 : 0<<2;
 	data |= m_fdc_intrq ? 1<<3 : 0<<3;
+	data |= 1 << 4; // no line printer error
 
 	//logerror("line_printer_r: %04x\n", data);
 
@@ -226,13 +332,19 @@ uint16_t unixpc_state::line_printer_r()
 
 uint16_t unixpc_state::diskdma_size_r()
 {
-	return m_diskdmasize;
+	return (m_diskdmacount & 0x3FFF) | 0xC000;
 }
 
 void unixpc_state::diskdma_size_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
-	COMBINE_DATA( &m_diskdmasize );
-	logerror("%x to disk DMA size\n", data);
+	// 2's complement of number of words to be DMA'd, counts until 0x3FFF
+	m_diskdmacount = data & 0x3FFF;
+	// advance DMA count to simulate advancing past false DMA transfer
+	m_diskdmacount++;
+	
+	m_idmarw = ((data & 0x4000) == 0x4000);  // 1 = DMA read, 0 = DMA write
+	m_dmaen = ((data & 0x8000) == 0x8000);   // Each time this goes from 0 to 1, DMA disk request is generated
+	logerror("disk DMA count %x, dmaen: %i, DMA read: %i\n", m_diskdmacount, m_dmaen, m_idmarw );	
 }
 
 void unixpc_state::diskdma_ptr_w(offs_t offset, uint16_t data)
@@ -240,16 +352,17 @@ void unixpc_state::diskdma_ptr_w(offs_t offset, uint16_t data)
 	if (offset >= 0x2000)
 	{
 		// set top 4 bytes
-		m_diskdmaptr &= 0xff;
-		m_diskdmaptr |= (offset << 8);
+		//m_diskdmaptr &= 0xff;
+		//m_diskdmaptr |= (offset << 8);
+		m_diskdmaptr = (m_diskdmaptr & 0x1FE) | ((offset<<1 & 0x3FFE) << 8);
 	}
 	else
 	{
-		m_diskdmaptr &= 0xffff00;
-		m_diskdmaptr |= (offset & 0xff);
+		//m_diskdmaptr &= 0xffff00;
+		//m_diskdmaptr |= (offset & 0xff);
+		m_diskdmaptr = (m_diskdmaptr & 0x3FFE00) | (offset<<1 & 0x1FE);
 	}
-
-	logerror("diskdma_ptr_w: wrote at %x, ptr now %x\n", offset<<1, m_diskdmaptr);
+	logerror("diskdma_ptr_w: wrote at %x, DMA address now 0x%x\n", offset<<1, m_diskdmaptr);
 }
 
 /***************************************************************************
@@ -258,29 +371,37 @@ void unixpc_state::diskdma_ptr_w(offs_t offset, uint16_t data)
 
 void unixpc_state::disk_control_w(uint8_t data)
 {
-	logerror("disk_control_w: %02x\n", data);
+	//logerror("disk_control_w: %02x\n", data);
+	logerror("fdc reset: %i, hdc reset: %i, floppy selected: %i, floppy motor: %i, HD selected: %i\n", !BIT(data, 7), !BIT(data, 4), BIT(data, 6), BIT(data, 5), BIT(data,3));
 
-	// TODO: bits 0-2 = head select
-
+	// TODO: bits 0-2 = HD head select
+	//uint8_t sdh = wd2010_read_reg(WD2010_REG_SDH);
+	//sdh = (sdh & ~0x07) | (data & 0x07);
+	//wd2010_write_reg(WD2010_REG_SDH, sdh);
+	
+	// bit 3 = HDD0 select (hd_selected)
 	m_hdc->drdy_w(BIT(data, 3) && m_hdr0->exists());
 
+	// bit 4 = hdc reset (when == 0)
 	if (!BIT(data, 4))
 		m_hdc->reset();
 
+	// bit 5 = floppy image, motor enable (when == 1)
 	m_floppy->mon_w(!BIT(data, 5));
 
-	// bit 6 = floppy selected / not selected
+	// bit 6 = floppy select (fd_selected)
 	if (BIT(data, 6))
-		m_wd2797->set_floppy(m_floppy);
+		m_fdc->set_floppy(m_floppy);
 	else
-		m_wd2797->set_floppy(nullptr);
+		m_fdc->set_floppy(nullptr);
 
-	m_wd2797->mr_w(BIT(data, 7));
+	// bit 7 = fdc reset (when == 0), send to Master Reset- (MR-)
+	m_fdc->mr_w(BIT(data, 7));
 }
 
 WRITE_LINE_MEMBER(unixpc_state::wd2797_intrq_w)
 {
-	logerror("wd2797_intrq_w: %d\n", state);
+	logerror("wd2797_intrq_w: %d, drq: %i\n", state, m_fdc->drq_r());
 	m_fdc_intrq = state;
 	m_int02->in_w<1>(state);
 }
@@ -288,6 +409,20 @@ WRITE_LINE_MEMBER(unixpc_state::wd2797_intrq_w)
 WRITE_LINE_MEMBER(unixpc_state::wd2797_drq_w)
 {
 	logerror("wd2797_drq_w: %d\n", state);
+	uint16_t data_read;
+	if (state)
+	{
+		data_read = m_fdc->data_r();
+		data_read <<= 8;
+		data_read += m_fdc->data_r();
+		logerror("floppy read attempt, DMA count: %x, DMA address: 0x%x, data read: %04x\n", m_diskdmacount, m_diskdmaptr, data_read);
+		// TODO: MMU map, m_diskdmaptr needs to be mapped to physical address
+		m_ramptr[m_diskdmaptr] = data_read;
+		// Increment DMA address
+		m_diskdmaptr += 2;
+		// Increment number of words transferred
+		m_diskdmacount++;
+	}
 }
 
 /***************************************************************************
@@ -331,11 +466,12 @@ void unixpc_state::unixpc_mem(address_map &map)
 	map(0x480000, 0x480001).w(FUNC(unixpc_state::rtc_w));
 	map(0x490000, 0x490001).select(0x7000).w(FUNC(unixpc_state::tcr_w));
 	map(0x4a0000, 0x4a0000).w("mreg", FUNC(output_latch_device::write));
+	map(0x4c0000, 0x4c0001).w(FUNC(unixpc_state::csr_w));
 	map(0x4d0000, 0x4d7fff).w(FUNC(unixpc_state::diskdma_ptr_w));
 	map(0x4e0001, 0x4e0001).w(FUNC(unixpc_state::disk_control_w)).cswidth(16);
 	map(0x4f0001, 0x4f0001).w("printlatch", FUNC(output_latch_device::write));
 	map(0xe00000, 0xe0000f).rw(m_hdc, FUNC(wd1010_device::read), FUNC(wd1010_device::write)).umask16(0x00ff);
-	map(0xe10000, 0xe10007).rw(m_wd2797, FUNC(wd_fdc_device_base::read), FUNC(wd_fdc_device_base::write)).umask16(0x00ff);
+	map(0xe10000, 0xe10007).rw(m_fdc, FUNC(wd2797_device::read), FUNC(wd2797_device::write)).umask16(0x00ff);
 	map(0xe30000, 0xe30001).r(FUNC(unixpc_state::rtc_r));
 	map(0xe40000, 0xe40001).select(0x7000).w(FUNC(unixpc_state::gcr_w));
 	map(0xe50000, 0xe50007).rw("mpsc", FUNC(upd7201_device::cd_ba_r), FUNC(upd7201_device::cd_ba_w)).umask16(0x00ff);
@@ -391,6 +527,7 @@ void unixpc_state::unixpc(machine_config &config)
 	// bit 4 (D12) = 0 = modem baud rate from UART clock inputs, 1 = baud from programmable timer
 	mreg.bit_handler<5>().set("printer", FUNC(centronics_device::write_strobe)).invert();
 	// bit 6 (D14) = 0 for disk DMA write, 1 for disk DMA read
+	mreg.bit_handler<6>().set(FUNC(unixpc_state::dma_reading_w));
 	// bit 7 (D15) = VBL ack (must go high-low-high to ack)
 
 	// video hardware
@@ -411,9 +548,9 @@ void unixpc_state::unixpc(machine_config &config)
 	ADDRESS_MAP_BANK(config, "ramrombank").set_map(&unixpc_state::ramrombank_map).set_options(ENDIANNESS_BIG, 16, 32, 0x400000);
 
 	// floppy
-	WD2797(config, m_wd2797, 40_MHz_XTAL / 40); // 1PCK (CPU clock) divided by custom DMA chip
-	m_wd2797->intrq_wr_callback().set(FUNC(unixpc_state::wd2797_intrq_w));
-	m_wd2797->drq_wr_callback().set(FUNC(unixpc_state::wd2797_drq_w));
+	WD2797(config, m_fdc, 40_MHz_XTAL / 40); // 1PCK (CPU clock) divided by custom DMA chip
+	m_fdc->intrq_wr_callback().set(FUNC(unixpc_state::wd2797_intrq_w));
+	m_fdc->drq_wr_callback().set(FUNC(unixpc_state::wd2797_drq_w));
 	FLOPPY_CONNECTOR(config, "wd2797:0", unixpc_floppies, "525dd", floppy_image_device::default_floppy_formats);
 
 	WD1010(config, m_hdc, 40_MHz_XTAL / 8);
