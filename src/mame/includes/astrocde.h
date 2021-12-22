@@ -41,6 +41,7 @@ public:
 		m_maincpu(*this, "maincpu"),
 		m_votrax(*this, "votrax"),
 		m_astrocade_sound1(*this, "astrocade1"),
+		m_astrocade_sound2(*this, "astrocade2"),
 		m_videoram(*this, "videoram"),
 		m_protected_ram(*this, "protected_ram"),
 		m_nvram(*this, "nvram"),
@@ -56,6 +57,7 @@ public:
 	required_device<cpu_device> m_maincpu;
 	optional_device<votrax_sc01_device> m_votrax;
 	optional_device<astrocade_io_device> m_astrocade_sound1;
+	optional_device<astrocade_io_device> m_astrocade_sound2;
 	optional_shared_ptr<uint8_t> m_videoram;
 	optional_shared_ptr<uint8_t> m_protected_ram;
 	optional_shared_ptr<uint8_t> m_nvram;
@@ -141,8 +143,6 @@ public:
 	void init_demndrgn();
 	void init_ebases();
 	void init_gorf();
-	void init_astrocde();
-	virtual void video_start() override;
 	void astrocade_palette(palette_device &palette) const;
 	DECLARE_VIDEO_START(profpac);
 	void profpac_palette(palette_device &palette) const;
@@ -156,7 +156,6 @@ public:
 	inline void increment_dest(uint8_t curwidth);
 	void execute_blit();
 	void init_sparklestar();
-	virtual void machine_start() override;
 
 	void votrax_speech_w(uint8_t data);
 	DECLARE_READ_LINE_MEMBER( votrax_speech_status_r );
@@ -183,7 +182,10 @@ public:
 	void seawolf2_map(address_map &map);
 	void spacezap_map(address_map &map);
 	void wow_map(address_map &map);
+
 protected:
+	virtual void machine_start() override;
+	virtual void video_start() override;
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 };
 

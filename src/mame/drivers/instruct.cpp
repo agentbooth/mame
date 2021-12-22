@@ -2,7 +2,7 @@
 // copyright-holders:Robbbert
 /***************************************************************************
 
-Signetics Intructor 50
+Signetics Instructor 50
 
 2010-04-08 Skeleton driver.
 2012-05-20 Connected digits, system boots. [Robbbert]
@@ -69,12 +69,16 @@ public:
 		, m_cass(*this, "cassette")
 		, m_display(*this, "display")
 		, m_io_keyboard(*this, "X%u", 0U)
+		, m_leds(*this, "led%u", 0U)
 	{ }
 
 	void instruct(machine_config &config);
 
-private:
+protected:
+	virtual void machine_reset() override;
+	virtual void machine_start() override;
 
+private:
 	uint8_t port_r();
 	uint8_t portfc_r();
 	uint8_t portfd_r();
@@ -91,8 +95,6 @@ private:
 	void io_map(address_map &map);
 	void mem_map(address_map &map);
 
-	void machine_reset() override;
-	void machine_start() override;
 	uint16_t m_lar;
 	uint8_t m_digit;
 	u8 m_seg;
@@ -105,23 +107,20 @@ private:
 	required_device<cassette_image_device> m_cass;
 	required_device<pwm_display_device> m_display;
 	required_ioport_array<6> m_io_keyboard;
+	output_finder<9> m_leds;
 };
 
 // flag led
 WRITE_LINE_MEMBER( instruct_state::flag_w )
 {
-	output().set_value("led8", !state);
+	m_leds[8] = !state;
 }
 
 // user port
 void instruct_state::port_w(uint8_t data)
 {
-	char ledname[8];
 	for (int i = 0; i < 8; i++)
-	{
-		sprintf(ledname,"led%d",i);
-		output().set_value(ledname, !BIT(data, i));
-	}
+		m_leds[i] = !BIT(data, i);
 }
 
 // cassette port
@@ -332,6 +331,7 @@ INPUT_PORTS_END
 
 void instruct_state::machine_reset()
 {
+	m_irqstate = 0;
 	m_cassin = 0;
 	port_w(0); // turn round leds off
 	m_maincpu->set_state_int(S2650_PC, 0x1800);
@@ -339,6 +339,8 @@ void instruct_state::machine_reset()
 
 void instruct_state::machine_start()
 {
+	m_leds.resolve();
+
 	save_item(NAME(m_lar));
 	save_item(NAME(m_digit));
 	save_item(NAME(m_seg));
@@ -354,13 +356,13 @@ QUICKLOAD_LOAD_MEMBER(instruct_state::quickload_cb)
 	quick_length = image.length();
 	if (quick_length < 0x0100)
 	{
-		image.seterror(IMAGE_ERROR_INVALIDIMAGE, "File too short");
+		image.seterror(image_error::INVALIDIMAGE, "File too short");
 		image.message(" File too short");
 	}
 	else
 	if (quick_length > 0x8000)
 	{
-		image.seterror(IMAGE_ERROR_INVALIDIMAGE, "File too long");
+		image.seterror(image_error::INVALIDIMAGE, "File too long");
 		image.message(" File too long");
 	}
 	else
@@ -369,12 +371,12 @@ QUICKLOAD_LOAD_MEMBER(instruct_state::quickload_cb)
 		read_ = image.fread( &quick_data[0], quick_length);
 		if (read_ != quick_length)
 		{
-			image.seterror(IMAGE_ERROR_INVALIDIMAGE, "Cannot read the file");
+			image.seterror(image_error::INVALIDIMAGE, "Cannot read the file");
 			image.message(" Cannot read the file");
 		}
 		else if (quick_data[0] != 0xc5)
 		{
-			image.seterror(IMAGE_ERROR_INVALIDIMAGE, "Invalid header");
+			image.seterror(image_error::INVALIDIMAGE, "Invalid header");
 			image.message(" Invalid header");
 		}
 		else
@@ -383,7 +385,7 @@ QUICKLOAD_LOAD_MEMBER(instruct_state::quickload_cb)
 
 			if (exec_addr >= quick_length)
 			{
-				image.seterror(IMAGE_ERROR_INVALIDIMAGE, "Exec address beyond end of file");
+				image.seterror(image_error::INVALIDIMAGE, "Exec address beyond end of file");
 				image.message(" Exec address beyond end of file");
 			}
 			else

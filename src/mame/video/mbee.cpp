@@ -1,7 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Robbbert
 /***************************************************************************
-    microbee.c
+    mbee.cpp
 
     video hardware
     Originally written by Juergen Buchmueller, Dec 1999
@@ -32,13 +32,7 @@
     3. At the Basic prompt, type in EDASM press enter. At the memory size
        prompt press enter. Now, make sure the keyboard works properly.
 
-    Old keyboard ToDo:
-    - Occasional characters dropped while typing
-    - Lots of characters dropped when pasting
-    - On mbee128p, Simply Write doesn't accept any input
-
-    New keyboard ToDo:
-    - On mbeett, various problems caused by phantom characters.
+    See drivers\mbee.cpp for any issues.
 
 ****************************************************************************/
 
@@ -102,8 +96,7 @@ void mbee_state::video_high_w(offs_t offset, u8 data)
 
 void mbee_state::port0b_w(u8 data)
 {
-	if (BIT(m_features, 0))
-		m_0b = data & 1;
+	m_0b = BIT(data, 0);
 }
 
 u8 mbee_state::port08_r()
@@ -252,15 +245,19 @@ u32 mbee_state::screen_update_mbee(screen_device &screen, bitmap_rgb32 &bitmap, 
 
 MC6845_ON_UPDATE_ADDR_CHANGED( mbee_state::crtc_update_addr )
 {
-// parameters passed are device, address, strobe(always 0)
+// parameters passed are address, strobe
 // not used on 256TC
 
-	oldkb_matrix_r(address);
+	if (strobe)
+		oldkb_matrix_r(address);
 }
 
 
 MC6845_UPDATE_ROW( mbee_state::crtc_update_row )
 {
+	if (!de)
+		return;
+
 	const rgb_t *palette = m_palette->palette()->entry_list_raw();
 
 	// colours
@@ -347,10 +344,9 @@ void mbee_state::standard_palette(palette_device &palette) const
 {
 	constexpr u8 bglevel[] = { 0, 0x54, 0xa0, 0xff };
 	constexpr u8 fglevel[] = { 0, 0xa0, 0xff, 0xff };
-	u8 i;
 
 	// set up background colours (00-63)
-	i = 0;
+	u8 i = 0;
 	for (u8 b : bglevel)
 	{
 		for (u8 g : bglevel)

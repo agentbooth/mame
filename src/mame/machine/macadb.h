@@ -20,8 +20,6 @@ public:
 	macadb_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 	void set_mcu_mode(bool bMCUMode) { m_bIsMCUMode = bMCUMode; }
-	void set_pmu_mode(bool bPMUMode) { m_bIsPMU = bPMUMode; }
-	void set_pmu_is_via1(bool bPMUVIA1) { m_bIsPMUVIA1 = bPMUVIA1; }
 
 	auto via_clock_callback() { return write_via_clock.bind(); }
 	auto via_data_callback() { return write_via_data.bind(); }
@@ -39,12 +37,6 @@ public:
 	void mac_adb_newaction(int state);
 	int32_t get_adb_state(void) { return m_adb_state; }
 
-	void pmu_exec();
-	int get_pm_data_recv(void) { return m_pm_data_recv; }
-	int get_pm_ack(void) { return m_pm_ack; }
-	void set_pm_data_send(int data) { m_pm_data_send = data; }
-	DECLARE_WRITE_LINE_MEMBER(pmu_req_w);
-
 protected:
 	// device-level overrides
 	virtual ioport_constructor device_input_ports() const override;
@@ -53,8 +45,6 @@ protected:
 
 private:
 	bool m_bIsMCUMode;
-	bool m_bIsPMU;
-	bool m_bIsPMUVIA1;
 
 	uint64_t m_last_adb_time;
 
@@ -70,16 +60,12 @@ private:
 	int32_t m_adb_stream_ptr;
 	int32_t m_adb_linestate;
 	bool  m_adb_srqflag;
+	int m_adb_linein;
 
 	#define kADBKeyBufSize 32
 	uint8_t m_adb_keybuf[kADBKeyBufSize];
 	uint8_t m_adb_keybuf_start;
 	uint8_t m_adb_keybuf_end;
-
-	// Portable/PB100 Power Manager IC comms (chapter 4, "Guide to the Macintosh Family Hardware", second edition)
-	uint8_t m_pm_ack, m_pm_cmd[32], m_pm_out[32], m_pm_dptr, m_pm_sptr, m_pm_slen, m_pm_state, m_pm_data_recv;
-	uint8_t m_pmu_int_status, m_pmu_last_adb_command, m_pmu_poll, m_pm_req, m_pm_data_send;
-	emu_timer *m_pmu_send_timer;
 
 	// ADB mouse state
 	int m_adb_mouseaddr;
@@ -89,21 +75,14 @@ private:
 	int m_adb_keybaddr;
 	int m_adb_keybinitialized, m_adb_currentkeys[2], m_adb_modifiers;
 
-	// PRAM for ADB MCU HLEs (mostly unused now)
-	uint8_t m_adb_pram[256];
-
 	int adb_pollkbd(int update);
 	int adb_pollmouse();
 	void adb_accummouse( uint8_t *MouseX, uint8_t *MouseY );
 	void adb_talk();
 
-	void pmu_one_byte_reply(uint8_t result);
-	void pmu_three_byte_reply(uint8_t result1, uint8_t result2, uint8_t result3);
-
 	inline void set_adb_line(int linestate) { write_adb_data(linestate); }
 
-	TIMER_CALLBACK_MEMBER(mac_adb_tick);    // macadb.c
-	TIMER_CALLBACK_MEMBER(mac_pmu_tick);    // macadb.c
+	TIMER_CALLBACK_MEMBER(mac_adb_tick);
 };
 
 // device type definition

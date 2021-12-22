@@ -48,6 +48,7 @@ private:
 		uint8_t m_key_rate_scale = 0;
 		uint8_t m_lfo_vibrato_reg = 0;
 		uint8_t m_lfo_amplitude_reg = 0;
+		uint8_t m_format = 0;
 	};
 
 	enum class state_t : u8
@@ -95,6 +96,7 @@ private:
 		envelope_gen_t m_envelope_gen;
 		lfo_t m_pitch_lfo; // Pitch lfo
 		lfo_t m_amplitude_lfo; // AM lfo
+		uint8_t m_format;
 	};
 
 	// internal state
@@ -121,6 +123,7 @@ private:
 	uint32_t value_to_fixed(const uint32_t bits, const float value);
 
 	void init_sample(sample_t *sample, uint32_t index);
+	void retrigger_sample(slot_t &slot);
 
 	// Internal LFO functions
 	void lfo_init();

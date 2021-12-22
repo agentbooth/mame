@@ -99,12 +99,12 @@ license:CC0
 		<text string="H"><color red="0.87" green="0.87" blue="0.84" /></text>
 	</element>
 
-	<element name="text_r11"><text string="[K]"><color red="0.81" green="0.8" blue="0.79" /></text></element>
-	<element name="text_r21"><text string="[Q]"><color red="0.81" green="0.8" blue="0.79" /></text></element>
-	<element name="text_r31"><text string="[R]"><color red="0.81" green="0.8" blue="0.79" /></text></element>
-	<element name="text_r41"><text string="[B]"><color red="0.81" green="0.8" blue="0.79" /></text></element>
-	<element name="text_r51"><text string="[N]"><color red="0.81" green="0.8" blue="0.79" /></text></element>
-	<element name="text_r61"><text string="[P]"><color red="0.81" green="0.8" blue="0.79" /></text></element>
+	<element name="text_r11"><image file="chess/wk.svg"><color alpha="0.78" /></image></element>
+	<element name="text_r21"><image file="chess/wq.svg"><color alpha="0.78" /></image></element>
+	<element name="text_r31"><image file="chess/wr.svg"><color alpha="0.78" /></image></element>
+	<element name="text_r41"><image file="chess/wb.svg"><color alpha="0.78" /></image></element>
+	<element name="text_r51"><image file="chess/wn.svg"><color alpha="0.78" /></image></element>
+	<element name="text_r61"><image file="chess/wp.svg"><color alpha="0.78" /></image></element>
 
 	<element name="text_r12"><text string="PB" align="1"><color red="0.81" green="0.8" blue="0.79" /></text></element>
 	<element name="text_r22"><text string="PV" align="1"><color red="0.81" green="0.8" blue="0.79" /></text></element>
@@ -137,34 +137,34 @@ license:CC0
 	</element>
 
 	<element name="piece" defstate="0">
-		<image file="chess/wp.png" state="1"/>
-		<image file="chess/wn.png" state="2"/>
-		<image file="chess/wb.png" state="3"/>
-		<image file="chess/wr.png" state="4"/>
-		<image file="chess/wq.png" state="5"/>
-		<image file="chess/wk.png" state="6"/>
+		<image file="chess/wp.svg" state="1"/>
+		<image file="chess/wn.svg" state="2"/>
+		<image file="chess/wb.svg" state="3"/>
+		<image file="chess/wr.svg" state="4"/>
+		<image file="chess/wq.svg" state="5"/>
+		<image file="chess/wk.svg" state="6"/>
 
-		<image file="chess/bp.png" state="7"/>
-		<image file="chess/bn.png" state="8"/>
-		<image file="chess/bb.png" state="9"/>
-		<image file="chess/br.png" state="10"/>
-		<image file="chess/bq.png" state="11"/>
-		<image file="chess/bk.png" state="12"/>
+		<image file="chess/bp.svg" state="7"/>
+		<image file="chess/bn.svg" state="8"/>
+		<image file="chess/bb.svg" state="9"/>
+		<image file="chess/br.svg" state="10"/>
+		<image file="chess/bq.svg" state="11"/>
+		<image file="chess/bk.svg" state="12"/>
 
 		<!-- selected pieces -->
-		<image file="chess/wp.png" state="13"><color alpha="0.5" /></image>
-		<image file="chess/wn.png" state="14"><color alpha="0.5" /></image>
-		<image file="chess/wb.png" state="15"><color alpha="0.5" /></image>
-		<image file="chess/wr.png" state="16"><color alpha="0.5" /></image>
-		<image file="chess/wq.png" state="17"><color alpha="0.5" /></image>
-		<image file="chess/wk.png" state="18"><color alpha="0.5" /></image>
+		<image file="chess/wp.svg" state="13"><color alpha="0.5" /></image>
+		<image file="chess/wn.svg" state="14"><color alpha="0.5" /></image>
+		<image file="chess/wb.svg" state="15"><color alpha="0.5" /></image>
+		<image file="chess/wr.svg" state="16"><color alpha="0.5" /></image>
+		<image file="chess/wq.svg" state="17"><color alpha="0.5" /></image>
+		<image file="chess/wk.svg" state="18"><color alpha="0.5" /></image>
 
-		<image file="chess/bp.png" state="19"><color alpha="0.5" /></image>
-		<image file="chess/bn.png" state="20"><color alpha="0.5" /></image>
-		<image file="chess/bb.png" state="21"><color alpha="0.5" /></image>
-		<image file="chess/br.png" state="22"><color alpha="0.5" /></image>
-		<image file="chess/bq.png" state="23"><color alpha="0.5" /></image>
-		<image file="chess/bk.png" state="24"><color alpha="0.5" /></image>
+		<image file="chess/bp.svg" state="19"><color alpha="0.5" /></image>
+		<image file="chess/bn.svg" state="20"><color alpha="0.5" /></image>
+		<image file="chess/bb.svg" state="21"><color alpha="0.5" /></image>
+		<image file="chess/br.svg" state="22"><color alpha="0.5" /></image>
+		<image file="chess/bq.svg" state="23"><color alpha="0.5" /></image>
+		<image file="chess/bk.svg" state="24"><color alpha="0.5" /></image>
 	</element>
 
 	<group name="sb_board">
@@ -465,12 +465,12 @@ license:CC0
 
 	<!-- right side -->
 
-		<element ref="text_r11"><bounds x="91.6" y="29.65" width="2.5" height="1.5" /></element>
-		<element ref="text_r21"><bounds x="91.6" y="32.15" width="2.5" height="1.5" /></element>
-		<element ref="text_r31"><bounds x="91.6" y="34.65" width="2.5" height="1.5" /></element>
-		<element ref="text_r41"><bounds x="91.6" y="37.15" width="2.5" height="1.5" /></element>
-		<element ref="text_r51"><bounds x="91.6" y="39.65" width="2.5" height="1.5" /></element>
-		<element ref="text_r61"><bounds x="91.6" y="42.15" width="2.5" height="1.5" /></element>
+		<element ref="text_r11"><bounds x="91.8" y="29.45" width="2" height="2" /></element>
+		<element ref="text_r21"><bounds x="91.8" y="31.95" width="2" height="2" /></element>
+		<element ref="text_r31"><bounds x="91.8" y="34.45" width="2" height="2" /></element>
+		<element ref="text_r41"><bounds x="91.8" y="36.95" width="2" height="2" /></element>
+		<element ref="text_r51"><bounds x="91.8" y="39.45" width="2" height="2" /></element>
+		<element ref="text_r61"><bounds x="91.8" y="41.95" width="2" height="2" /></element>
 
 		<element ref="text_r12"><bounds x="96.8" y="29.65" width="10" height="1.5" /></element>
 		<element ref="text_r22"><bounds x="96.8" y="32.15" width="10" height="1.5" /></element>

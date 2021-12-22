@@ -415,6 +415,8 @@ earlier TK games, so it appears to be optional or is only used by the later TK51
 #include "speaker.h"
 
 
+namespace {
+
 class namcos10_state : public driver_device
 {
 public:
@@ -423,6 +425,7 @@ public:
 		, m_maincpu(*this, "maincpu")
 		, m_exio_mcu(*this, "exio_mcu")
 		, m_memp3_mcu(*this, "memp3_mcu")
+		, decrypter(*this, "decrypter")
 	{ }
 
 	void namcos10_base(machine_config &config);
@@ -450,6 +453,10 @@ public:
 	void init_mrdrilrg();
 	void init_chocovdr();
 	void init_konotako();
+
+protected:
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
 
 private:
 	// memm variant interface
@@ -495,7 +502,6 @@ private:
 	uint32_t bank_base;
 	uint32_t nand_address;
 	uint16_t block[0x1ff];
-	ns10_decrypter_device* decrypter;
 
 	uint16_t i2c_host_clock, i2c_host_data, i2c_dev_clock, i2c_dev_data, i2c_prev_clock, i2c_prev_data;
 	int i2cp_mode;
@@ -508,12 +514,18 @@ private:
 
 	void i2c_update();
 
-	DECLARE_MACHINE_RESET(namcos10);
 	void memn_driver_init(  );
 	required_device<psxcpu_device> m_maincpu;
 	optional_device<tmp95c061_device> m_exio_mcu;
 	optional_device<tmp95c061_device> m_memp3_mcu;
+	optional_device<ns10_decrypter_device> decrypter;
 };
+
+
+void namcos10_state::machine_start()
+{
+	nand_address = 0;
+}
 
 
 void namcos10_state::namcos10_map(address_map &map)
@@ -541,7 +553,7 @@ void namcos10_state::namcos10_map(address_map &map)
 void namcos10_state::crypto_switch_w(uint16_t data)
 {
 	printf("crypto_switch_w: %04x\n", data);
-	if (decrypter == nullptr)
+	if (!decrypter.found())
 		return;
 
 	if (BIT(data, 15) != 0)
@@ -559,7 +571,7 @@ uint16_t namcos10_state::range_r(offs_t offset)
 {
 	uint16_t data = ((const uint16_t *)(memregion("maincpu:rom")->base()))[bank_base+offset];
 
-	if (decrypter == nullptr)
+	if (!decrypter.found())
 		return data;
 
 	if (decrypter->is_active())
@@ -770,7 +782,7 @@ uint16_t namcos10_state::nand_data_r()
 /*  printf( "data<-%08x (%08x)\n", data, nand_address ); */
 	nand_address++;
 
-	if (decrypter == nullptr)
+	if (!decrypter.found())
 		return data;
 
 	if (decrypter->is_active())
@@ -818,7 +830,6 @@ void namcos10_state::memn_driver_init(  )
 {
 	uint8_t *BIOS = (uint8_t *)memregion( "maincpu:rom" )->base();
 	nand_base = (uint8_t *)memregion( "user2" )->base();
-	decrypter = static_cast<ns10_decrypter_device*>(machine().root_device().subdevice("decrypter"));
 
 	nand_copy( (uint32_t *)( BIOS + 0x0000000 ), 0x08000, 0x001c000 );
 	nand_copy( (uint32_t *)( BIOS + 0x0020000 ), 0x24000, 0x03e0000 );
@@ -840,16 +851,15 @@ static void decrypt_bios( running_machine &machine, const char *regionName, int 
 
 void namcos10_state::init_mrdrilr2()
 {
-	int regSize = machine().root_device().memregion("maincpu:rom")->bytes();
+	int regSize = memregion("maincpu:rom")->bytes();
 
 	decrypt_bios(machine(), "maincpu:rom", 0, 0x62000, 0xc, 0xd, 0xf, 0xe, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x4, 0x1, 0x2, 0x5, 0x0, 0x3);
 	decrypt_bios(machine(), "maincpu:rom", 0x380000, regSize, 0xc, 0xd, 0xf, 0xe, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x4, 0x1, 0x2, 0x5, 0x0, 0x3);
-	decrypter = static_cast<ns10_decrypter_device*>(machine().root_device().subdevice("decrypter"));
 }
 
 void namcos10_state::init_gjspace()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x0, 0x2, 0xe, 0xd, 0xf, 0x6, 0xc, 0x7, 0x5, 0x1, 0x9, 0x8, 0xa, 0x3, 0x4, 0xb);
 	decrypt_bios(machine(), "user2", 0x0210000, 0x104e800, 0x0, 0x2, 0xe, 0xd, 0xf, 0x6, 0xc, 0x7, 0x5, 0x1, 0x9, 0x8, 0xa, 0x3, 0x4, 0xb);
 	decrypt_bios(machine(), "user2", 0x1077c00, regSize, 0x0, 0x2, 0xe, 0xd, 0xf, 0x6, 0xc, 0x7, 0x5, 0x1, 0x9, 0x8, 0xa, 0x3, 0x4, 0xb);
@@ -858,14 +868,14 @@ void namcos10_state::init_gjspace()
 
 void namcos10_state::init_mrdrilrg()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x8400, regSize, 0x6, 0x4, 0x7, 0x5, 0x2, 0x1, 0x0, 0x3, 0xc, 0xd, 0xe, 0xf, 0x8, 0x9, 0xb, 0xa);
 	memn_driver_init();
 }
 
 void namcos10_state::init_knpuzzle()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x6, 0x7, 0x4, 0x5, 0x2, 0x0, 0x3, 0x1, 0xc, 0xd, 0xe, 0xf, 0x9, 0xb, 0x8, 0xa);
 	decrypt_bios(machine(), "user2", 0x047ac00, 0x1042200, 0x6, 0x7, 0x4, 0x5, 0x2, 0x0, 0x3, 0x1, 0xc, 0xd, 0xe, 0xf, 0x9, 0xb, 0x8, 0xa);
 	decrypt_bios(machine(), "user2", 0x104a600, regSize  , 0x6, 0x7, 0x4, 0x5, 0x2, 0x0, 0x3, 0x1, 0xc, 0xd, 0xe, 0xf, 0x9, 0xb, 0x8, 0xa);
@@ -874,7 +884,7 @@ void namcos10_state::init_knpuzzle()
 
 void namcos10_state::init_startrgn()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x6, 0x5, 0x4, 0x7, 0x1, 0x3, 0x0, 0x2, 0xc, 0xd, 0xe, 0xf, 0x8, 0xb, 0xa, 0x9);
 	decrypt_bios(machine(), "user2", 0x00b9a00, 0x105ae00, 0x6, 0x5, 0x4, 0x7, 0x1, 0x3, 0x0, 0x2, 0xc, 0xd, 0xe, 0xf, 0x8, 0xb, 0xa, 0x9);
 	decrypt_bios(machine(), "user2", 0x1080000, regSize  , 0x6, 0x7, 0x4, 0x5, 0x0, 0x1, 0x3, 0x2, 0xd, 0xc, 0xf, 0xe, 0x8, 0x9, 0xb, 0xa);
@@ -883,7 +893,7 @@ void namcos10_state::init_startrgn()
 
 void namcos10_state::init_gamshara()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x5, 0x4, 0x7, 0x6, 0x0, 0x1, 0x3, 0x2, 0xd, 0xf, 0xc, 0xe, 0x8, 0x9, 0xa, 0xb);
 	decrypt_bios(machine(), "user2", 0x014e200, 0x105ae00, 0x5, 0x4, 0x7, 0x6, 0x0, 0x1, 0x3, 0x2, 0xd, 0xf, 0xc, 0xe, 0x8, 0x9, 0xa, 0xb);
 	decrypt_bios(machine(), "user2", 0x1080000, regSize  , 0x5, 0x4, 0x7, 0x6, 0x0, 0x1, 0x3, 0x2, 0xd, 0xf, 0xc, 0xe, 0x8, 0x9, 0xa, 0xb);
@@ -892,14 +902,14 @@ void namcos10_state::init_gamshara()
 
 void namcos10_state::init_gunbalna()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x8400, regSize, 0x5, 0x4, 0x7, 0x6, 0x0, 0x1, 0x3, 0x2, 0xd, 0xf, 0xc, 0xe, 0x9, 0x8, 0xa, 0xb);
 	memn_driver_init();
 }
 
 void namcos10_state::init_chocovdr()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x5, 0x4, 0x6, 0x7, 0x1, 0x0, 0x2, 0x3, 0xc, 0xf, 0xe, 0xd, 0x8, 0xb, 0xa, 0x9);
 	decrypt_bios(machine(), "user2", 0x01eae00, 0x105ae00, 0x5, 0x4, 0x6, 0x7, 0x1, 0x0, 0x2, 0x3, 0xc, 0xf, 0xe, 0xd, 0x8, 0xb, 0xa, 0x9);
 	decrypt_bios(machine(), "user2", 0x1080000, regSize  , 0x5, 0x4, 0x6, 0x7, 0x1, 0x0, 0x2, 0x3, 0xc, 0xf, 0xe, 0xd, 0x8, 0xb, 0xa, 0x9);
@@ -908,14 +918,14 @@ void namcos10_state::init_chocovdr()
 
 void namcos10_state::init_panikuru()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x8400, regSize, 0x6, 0x4, 0x7, 0x5, 0x0, 0x1, 0x2, 0x3, 0xc, 0xf, 0xe, 0xd, 0x9, 0x8, 0xb, 0xa);
 	memn_driver_init();
 }
 
 void namcos10_state::init_nflclsfb()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x6, 0x5, 0x4, 0x7, 0x1, 0x3, 0x0, 0x2, 0xc, 0xd, 0xe, 0xf, 0x8, 0xb, 0xa, 0x9);
 	decrypt_bios(machine(), "user2", 0x0214200, 0x105ae00, 0x6, 0x5, 0x4, 0x7, 0x1, 0x3, 0x0, 0x2, 0xc, 0xd, 0xe, 0xf, 0x8, 0xb, 0xa, 0x9);
 	decrypt_bios(machine(), "user2", 0x1080000, regSize  , 0x6, 0x5, 0x4, 0x7, 0x1, 0x3, 0x0, 0x2, 0xc, 0xd, 0xe, 0xf, 0x8, 0xb, 0xa, 0x9);
@@ -924,7 +934,7 @@ void namcos10_state::init_nflclsfb()
 
 void namcos10_state::init_konotako()
 {
-	int regSize = machine().root_device().memregion("user2")->bytes();
+	int regSize = memregion("user2")->bytes();
 	decrypt_bios(machine(), "user2", 0x0008400, 0x0029400, 0x6, 0x7, 0x4, 0x5, 0x0, 0x1, 0x3, 0x2, 0xd, 0xc, 0xf, 0xe, 0x8, 0x9, 0xb, 0xa);
 	decrypt_bios(machine(), "user2", 0x00b9a00, 0x105ae00, 0x6, 0x7, 0x4, 0x5, 0x0, 0x1, 0x3, 0x2, 0xd, 0xc, 0xf, 0xe, 0x8, 0x9, 0xb, 0xa);
 	decrypt_bios(machine(), "user2", 0x1080000, regSize  , 0x6, 0x7, 0x4, 0x5, 0x0, 0x1, 0x3, 0x2, 0xd, 0xc, 0xf, 0xe, 0x8, 0x9, 0xb, 0xa);
@@ -932,7 +942,7 @@ void namcos10_state::init_konotako()
 }
 
 
-MACHINE_RESET_MEMBER(namcos10_state,namcos10)
+void namcos10_state::machine_reset()
 {
 	i2c_dev_clock = i2c_dev_data = 1;
 	i2c_host_clock = i2c_host_data = 1;
@@ -952,8 +962,6 @@ void namcos10_state::namcos10_base(machine_config &config)
 	// switches to 400000.  If berr is active, the first configuration
 	// wipes all handlers after 1fc80000, which kills the system
 	// afterwards
-
-	MCFG_MACHINE_RESET_OVERRIDE(namcos10_state, namcos10)
 
 	/* video hardware */
 	CXD8561CQ(config, "gpu", XTAL(53'693'175), 0x200000, subdevice<psxcpu_device>("maincpu")).set_screen("screen"); // 2 54V25632s
@@ -1338,6 +1346,9 @@ ROM_START( pacmball )
 	ROM_LOAD( "k9f2808u0c.8e",  0x0000000, 0x1080000, CRC(7b6f814d) SHA1(728167866d9350150b5fd9ebcf8fe7280efedb91) )
 	ROM_LOAD( "k9f2808u0c.8d",  0x1080000, 0x1080000, CRC(f79d7199) SHA1(4ef9b758ee778e12f7fef717e063597299fb8219) )
 ROM_END
+
+} // Anonymous namespace
+
 
 GAME( 2000, mrdrilr2,  0,        ns10_mrdrilr2,      namcos10, namcos10_state, init_mrdrilr2, ROT0, "Namco", "Mr. Driller 2 (Japan, DR21 Ver.A)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND ) // PORT_4WAY joysticks
 GAME( 2000, mrdrlr2a,  mrdrilr2, ns10_mrdrilr2,      namcos10, namcos10_state, init_mrdrilr2, ROT0, "Namco", "Mr. Driller 2 (World, DR22 Ver.A)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND ) // PORT_4WAY joysticks

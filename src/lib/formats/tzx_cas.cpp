@@ -30,7 +30,6 @@ TODO:
 #include "tzx_cas.h"
 #include "imageutl.h"
 
-#include <cassert>
 #include <cmath>
 
 
@@ -88,7 +87,7 @@ static void tzx_cas_get_blocks( const uint8_t *casdata, int caslen )
 			void *old_blocks = blocks;
 			int old_max_block_count = max_block_count;
 			max_block_count = max_block_count + BLOCK_COUNT_INCREMENTS;
-			blocks = (uint8_t**)malloc(max_block_count * sizeof(uint8_t*)); // SHOULD NOT BE USING auto_alloc_array()
+			blocks = (uint8_t**)malloc(max_block_count * sizeof(uint8_t*));
 			memset(blocks, 0, max_block_count);
 			memcpy(blocks, old_blocks, old_max_block_count * sizeof(uint8_t*));
 			free(old_blocks);
@@ -571,7 +570,7 @@ static int tzx_cas_do_work( int16_t **buffer )
 			if (pause_time == 0)
 			{
 				/* pause = 0 is used to let an emulator automagically stop the tape
-				   in MESS we do not do that, so we insert a 5 second pause. */
+				   in MAME we do not do that, so we insert a 5 second pause. */
 				pause_time = 5000;
 			}
 			size += tzx_cas_handle_block(buffer, cur_block, pause_time, 0, 0, 0, 0, 0, 0, 0, 0);

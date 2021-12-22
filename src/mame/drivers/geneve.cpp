@@ -248,7 +248,7 @@ public:
 		m_pal(*this, GENEVE_PAL_TAG),
 		m_joyport(*this, TI_JOYPORT_TAG),
 		m_colorbus(*this, COLORBUS_TAG),
-		m_kbdconn(*this, GENEVE_KEYBOARD_CONN_TAG),
+		m_kbdconn(*this, "kbd"),
 		m_peribox(*this, TI_PERIBOX_TAG),
 		m_pfm512(*this, GENEVE_PFM512_TAG),
 		m_pfm512a(*this, GENEVE_PFM512A_TAG),
@@ -632,16 +632,15 @@ void geneve_state::memwrite(offs_t offset, uint8_t data)
 
 	if (machine().side_effects_disabled())
 	{
-		// TODO: add method to tms9995
-//      if (m_cpu->is_onchip(offset))
-//      {
-//          m_cpu->debug_write_onchip_memory(offset, data);
-//          return;
-//      }
+		if (m_cpu->is_onchip(offset))
+		{
+			m_cpu->debug_write_onchip_memory(offset, data);
+			return;
+		}
 
 		// The debugger does not call setaddress, so we do it here
 		// Also, the decode result is replaced by the debugger version
-		setaddress_debug(true, addr13, 0);
+		setaddress_debug(true, offset, 0);
 	}
 
 	// Video write (never by debugger)
@@ -1132,6 +1131,8 @@ void geneve_state::geneve(machine_config &config)
 	// Gate array
 	GENEVE_GATE_ARRAY(config, m_gatearray, 0);
 	m_gatearray->kbdint_cb().set(FUNC(geneve_state::keyboard_interrupt));
+	m_gatearray->kbdclk_cb().set(m_kbdconn, FUNC(pc_kbdc_device::clock_write_from_mb));
+	m_gatearray->kbddata_cb().set(m_kbdconn, FUNC(pc_kbdc_device::data_write_from_mb));
 
 	// Peripheral expansion box (Geneve composition)
 	TI99_PERIBOX_GEN(config, m_peribox, 0);
@@ -1148,6 +1149,8 @@ void geneve_state::genmod(machine_config &config)
 	// Gate Array
 	GENEVE_GATE_ARRAY(config, m_gatearray, 0);
 	m_gatearray->kbdint_cb().set(FUNC(geneve_state::keyboard_interrupt));
+	m_gatearray->kbdclk_cb().set(m_kbdconn, FUNC(pc_kbdc_device::clock_write_from_mb));
+	m_gatearray->kbddata_cb().set(m_kbdconn, FUNC(pc_kbdc_device::data_write_from_mb));
 
 	// Peripheral expansion box (Geneve composition with Genmod and plugged-in Memex)
 	TI99_PERIBOX_GENMOD(config, m_peribox, 0);
@@ -1212,8 +1215,7 @@ void geneve_state::geneve_common(machine_config &config)
 	m_sound->ready_cb().set(FUNC(geneve_state::sndready));
 
 	// User interface devices: PC-style keyboard, joystick port, mouse connector
-	PC_KBDC(config, m_kbdconn, 0);
-	PC_KBDC_SLOT(config, "kbd", geneve_xt_keyboards, STR_KBD_GENEVE_XT_101_HLE).set_pc_kbdc_slot(m_kbdconn);
+	PC_KBDC(config, m_kbdconn, geneve_xt_keyboards, STR_KBD_GENEVE_XT_101_HLE);
 	m_kbdconn->out_clock_cb().set(GENEVE_GATE_ARRAY_TAG, FUNC(bus::ti99::internal::geneve_gate_array_device::kbdclk));
 	m_kbdconn->out_data_cb().set(GENEVE_GATE_ARRAY_TAG, FUNC(bus::ti99::internal::geneve_gate_array_device::kbddata));
 
@@ -1241,16 +1243,22 @@ ROM_START(geneve)
 	/*CPU memory space*/
 	ROM_REGION(0x4000, "maincpu", 0)
 	ROM_DEFAULT_BIOS("0.98")
-	ROM_SYSTEM_BIOS(0, "0.98", "Geneve Boot ROM 0.98")
+	ROM_SYSTEM_BIOS(0, "0.98", "Geneve Boot ROM 0.98 (1987)")
 	ROMX_LOAD("genbt098.bin", 0x0000, 0x4000, CRC(b2e20df9) SHA1(2d5d09177afe97d63ceb3ad59b498b1c9e2153f7), ROM_BIOS(0))
-	ROM_SYSTEM_BIOS(1, "1.00", "Geneve Boot ROM 1.00")
+	ROM_SYSTEM_BIOS(1, "1.00", "Geneve Boot ROM 1.00 (1990)")
 	ROMX_LOAD("genbt100.bin", 0x0000, 0x4000, CRC(8001e386) SHA1(b44618b54dabac3882543e18555d482b299e0109), ROM_BIOS(1))
+	ROM_SYSTEM_BIOS(2, "2.00", "Geneve Boot ROM 2.00 (2021)")
+	ROMX_LOAD("genbt200.bin", 0x0000, 0x4000, CRC(cc159fd6) SHA1(15d3bb48edb301364ecbd42025c4a2539cc3070d), ROM_BIOS(2))
 ROM_END
 
 ROM_START(genmod)
 	/*CPU memory space*/
 	ROM_REGION(0x4000, "maincpu", 0)
-	ROM_LOAD("gnmbt100.bin", 0x0000, 0x4000, CRC(19b89479) SHA1(6ef297eda78dc705946f6494e9d7e95e5216ec47))
+	ROM_DEFAULT_BIOS("1.00")
+	ROM_SYSTEM_BIOS(0, "1.00", "Geneve Mod Boot ROM 1.00 (1990)")
+	ROMX_LOAD("gnmbt100.bin", 0x0000, 0x4000, CRC(19b89479) SHA1(6ef297eda78dc705946f6494e9d7e95e5216ec47), ROM_BIOS(0))
+	ROM_SYSTEM_BIOS(1, "2.00", "Geneve Mod Boot ROM 2.00 (2021)")
+	ROMX_LOAD("gnmbt200.bin", 0x0000, 0x4000, CRC(0a66c714) SHA1(139ed03d365b21123295cd99c73736ee424dbb74), ROM_BIOS(1))
 ROM_END
 
 //    YEAR  NAME    PARENT  COMPAT  MACHINE      INPUT   CLASS         INIT         COMPANY  FULLNAME       FLAGS

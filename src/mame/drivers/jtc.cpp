@@ -92,7 +92,13 @@ private:
 class jtces40_state : public jtc_state
 {
 public:
-	using jtc_state::jtc_state;
+	jtces40_state(const machine_config &mconfig, device_type type, const char *tag)
+		: jtc_state(mconfig, type, tag)
+		, m_video_ram_40(*this, "videoram40", JTC_ES40_VIDEORAM_SIZE, ENDIANNESS_BIG)
+		, m_color_ram_r(*this, "color_ram_r", JTC_ES40_VIDEORAM_SIZE, ENDIANNESS_BIG)
+		, m_color_ram_g(*this, "color_ram_g", JTC_ES40_VIDEORAM_SIZE, ENDIANNESS_BIG)
+		, m_color_ram_b(*this, "color_ram_b", JTC_ES40_VIDEORAM_SIZE, ENDIANNESS_BIG)
+	{ }
 	void jtces40(machine_config &config);
 private:
 	virtual void video_start() override;
@@ -101,9 +107,11 @@ private:
 	void videoram_w(offs_t offset, u8 data);
 	void banksel_w(u8 data);
 	u8 m_video_bank;
-	std::unique_ptr<u8[]> m_color_ram_r;
-	std::unique_ptr<u8[]> m_color_ram_g;
-	std::unique_ptr<u8[]> m_color_ram_b;
+
+	memory_share_creator<uint8_t> m_video_ram_40;
+	memory_share_creator<uint8_t> m_color_ram_r;
+	memory_share_creator<uint8_t> m_color_ram_g;
+	memory_share_creator<uint8_t> m_color_ram_b;
 	void jtc_es40_mem(address_map &map);
 	void es40_palette(palette_device &palette) const;
 };
@@ -195,7 +203,7 @@ void jtces40_state::videoram_w(offs_t offset, u8 data)
 	if (BIT(m_video_bank, 7)) m_color_ram_r[offset] = data;
 	if (BIT(m_video_bank, 6)) m_color_ram_g[offset] = data;
 	if (BIT(m_video_bank, 5)) m_color_ram_b[offset] = data;
-	if (BIT(m_video_bank, 4)) m_video_ram[offset] = data;
+	if (BIT(m_video_bank, 4)) m_video_ram_40[offset] = data;
 }
 
 void jtces40_state::banksel_w(u8 data)
@@ -589,22 +597,22 @@ QUICKLOAD_LOAD_MEMBER(jtc_state::quickload_cb)
 	{
 		if (quick_length < 0x0088)
 		{
-			image.seterror(IMAGE_ERROR_INVALIDIMAGE, "File too short");
+			image.seterror(image_error::INVALIDIMAGE, "File too short");
 			image.message(" File too short");
 		}
 		else
 		if (quick_length > 0x8000)
 		{
-			image.seterror(IMAGE_ERROR_INVALIDIMAGE, "File too long");
+			image.seterror(image_error::INVALIDIMAGE, "File too long");
 			image.message(" File too long");
 		}
 		else
 		{
 			quick_data.resize(quick_length+1);
-			u16 read_ = image.fread( &quick_data[0], quick_length);
+			u16 read_ = image.fread(&quick_data[0], quick_length);
 			if (read_ != quick_length)
 			{
-				image.seterror(IMAGE_ERROR_INVALIDIMAGE, "Cannot read the file");
+				image.seterror(image_error::INVALIDIMAGE, "Cannot read the file");
 				image.message(" Cannot read the file");
 			}
 			else
@@ -613,7 +621,7 @@ QUICKLOAD_LOAD_MEMBER(jtc_state::quickload_cb)
 				quick_length = quick_data[0x14] * 256 + quick_data[0x13] - quick_addr + 0x81;
 				if (image.length() != quick_length)
 				{
-					image.seterror(IMAGE_ERROR_INVALIDIMAGE, "Invalid file header");
+					image.seterror(image_error::INVALIDIMAGE, "Invalid file header");
 					image.message(" Invalid file header");
 				}
 				else
@@ -635,7 +643,7 @@ QUICKLOAD_LOAD_MEMBER(jtc_state::quickload_cb)
 		quick_addr = 0xe000;
 		if (quick_length > 0x8000)
 		{
-			image.seterror(IMAGE_ERROR_INVALIDIMAGE, "File too long");
+			image.seterror(image_error::INVALIDIMAGE, "File too long");
 			image.message(" File too long");
 		}
 		else
@@ -644,7 +652,7 @@ QUICKLOAD_LOAD_MEMBER(jtc_state::quickload_cb)
 			u16 read_ = image.fread( &quick_data[0], quick_length);
 			if (read_ != quick_length)
 			{
-				image.seterror(IMAGE_ERROR_INVALIDIMAGE, "Cannot read the file");
+				image.seterror(image_error::INVALIDIMAGE, "Cannot read the file");
 				image.message(" Cannot read the file");
 			}
 			else
@@ -707,18 +715,8 @@ void jtces40_state::es40_palette(palette_device &palette) const
 
 void jtces40_state::video_start()
 {
-	/* allocate memory */
-	m_video_ram.allocate(JTC_ES40_VIDEORAM_SIZE);
-	m_color_ram_r = std::make_unique<u8[]>(JTC_ES40_VIDEORAM_SIZE);
-	m_color_ram_g = std::make_unique<u8[]>(JTC_ES40_VIDEORAM_SIZE);
-	m_color_ram_b = std::make_unique<u8[]>(JTC_ES40_VIDEORAM_SIZE);
-
 	/* register for state saving */
 	save_item(NAME(m_video_bank));
-	save_pointer(NAME(m_video_ram.target()), JTC_ES40_VIDEORAM_SIZE);
-	save_pointer(NAME(m_color_ram_r), JTC_ES40_VIDEORAM_SIZE);
-	save_pointer(NAME(m_color_ram_g), JTC_ES40_VIDEORAM_SIZE);
-	save_pointer(NAME(m_color_ram_b), JTC_ES40_VIDEORAM_SIZE);
 	save_item(NAME(m_centronics_busy));
 }
 
@@ -732,7 +730,7 @@ u32 jtces40_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, co
 		{
 			for (int x = 0; x < 40; x++)
 			{
-				u8 const data = m_video_ram[ma + x];
+				u8 const data = m_video_ram_40[ma + x];
 				u8 const r = ~m_color_ram_r[ma + x];
 				u8 const g = ~m_color_ram_g[ma + x];
 				u8 const b = ~m_color_ram_b[ma + x];

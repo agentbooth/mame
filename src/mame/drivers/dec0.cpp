@@ -81,8 +81,13 @@ startup), $07 (same function as Bad Dudes) and $09 (same function as Bad Dudes).
 Most of the MCU program isn't utilised.
 
 
-Guru-Readme for Data East 16 bit games (Updated 7-Feb-2017)
 
+***************************************************************************
+
+Data East 16 bit games (Updated 19-Feb-2021)
+Hardware info by Guru
+
+The games that use this hardware include....
 Heavy Barrel
 Bad Dudes vs. Dragonninja
 Dragonninja
@@ -307,7 +312,7 @@ DE-0316-4
 |  PZ-2.A2                                              |
 |-------------------------------------------------------|
 Notes:
-      DEM-01    - Unknown SDIP52 ASIC (no clock input so not an MCU, decapping it found only ASIC, no ROM)
+      DEM-01    - Fujitsu MB8421 Dual port SRAM in disguise as Data East custom chip DEM-01.
       DEC-01    - HuC6280 sound CPU in disguise as Data East custom chip DEC-01. Clock input 21.4772MHz on pin 10
       M6295     - Clock 1.000MHz [20/2/10], pin 7 HIGH
       4558      - NEC C4558 Dual Op Amp
@@ -319,6 +324,69 @@ Notes:
       CN4       - 6-pin cable joining to Main Board
       ROMs      - All ROMs are 27512/27256 EPROM/maskROM
 
+
+Single PCB Types
+----------------
+
+Midnight Resistance
+Hardware info by Guru
+
+DE-0323-4
+|--------------------------------------------------------------------------|
+|   RCDM-I1          TMM2018  MB7114.22F |---------|              FH-11.21A|
+|J  RCDM-I1          TMM2018             |L7B0072  |  TMM2018     FH-10.20A|
+|A  RCDM-I1  FK15.18K  TB-6              |DATAEAST |  TMM2018     FH-09.18A|
+|M  RCDM-I1            TB-1-1            |BAC 06   |                       |
+|M  RCDM-I1  FK14.17K           |-----|  |---------|              FH-08.16A|
+|A   SW1                        | 6   |  |---------|                       |
+|    SW2     FK13.15K           | 8   |  |L7B0072  |              FH-07.15A|
+|                               | 0   |  |DATAEAST |  TMM2018              |
+|   RCDM-I1  FK12.13K  TB-5     | 0   |  |BAC 06   |  TMM2018     FH-05.13A|
+|   RCDM-I1                     | 0   |  |---------|                       |
+|   RCDM-I1                     | P   |                           FH05-.11A|
+|   RCDM-I1            TB-2     | 1   |  |---------|                       |
+|   RCDM-I1  TMM2063   TB-3     | 2   |  |L7B0072  |  TMM2063     FH04-.10A|
+|   RCDM-I1  TMM2063   TB-4     |-----|  |DATAEAST |  TMM2063              |
+|CN2         20MHz                       |BAC 06   |              FH-03.8A |
+|                                        |---------|                       |
+|CN3         24MHz     36       TMM2018               |---------| FH-02.6A |
+|                               TMM2018               |L7B0073  |          |
+|VOL     YM3014     1.056MHz    FH16-.5F   TMM2018    |DATAEAST | FH-01.4A |
+|UPC3403          YM3812        TMM2063    TMM2018    |MXC 06   |          |
+|        YM3014   YM2203          |-----|             |---------| FH-00.2A |
+|MB3730  UPC3403  M6295  FH17-.1H | 45  |                                  |
+|---------------------------------|-----|----------------------------------|
+Notes:
+      68000   - Clock input 10.000MHz [20/2]
+      YM2203  - Clock input 1.500MHz [24/8/2]
+      YM3812  - Clock input 3.000MHz [24/4/2]
+      M6295   - Clock 1.056MHz, pin 7 HIGH
+      45      - HuC6280 sound CPU in disguise as Data East custom chip 45. Clock input 6.000MHz [24/4] on pin 10
+      36      - Mysterious unknown SOP28 chip (possibly protection-related?)
+      UPC3403 - NEC uPC3403 quad operational amplifier
+      TMM2018 - 2k x8 SRAM, equivalent to 6116
+      TMM2063 - 8k x8 SRAM, equivalent to 6264
+      MB7114  - 256b x4-bit bipolar PROM marked 'TB-7', compatible with 82S129
+      RCDM-I1 - Custom resistor array
+      SW1/SW2 - 8-position DIP switch
+      CN2/CN3 - 13-pin connector for rotary joystick
+      L7B007x - DECO custom graphics chips (QFP160)
+                MXC 06 = Sprite Generator
+                BAC 06 = Tile Generator
+      TB-*    - PALs
+                TB1-1 = MMI PAL16R4
+                Other PALs are MMI PAL16L8
+      ROMs    - FK* = 27C010 EPROM
+                FH04/FH05 = 64kB Mask ROM (compatible with 27C512)
+                FH17 = 27C010 EPROM
+                Other FH-xx ROMs are 128kB Mask ROM (compatible with 27C010)
+                Labels on some ROMs FL & FH seem to be used interchangeably on different ROM sets but the contents is the same.
+
+      Measurements
+      ------------
+      VSync - 57.44530Hz
+      HSync - 15.1438kHz
+
 ***************************************************************************/
 
 #include "emu.h"
@@ -328,10 +396,11 @@ Notes:
 #include "cpu/m6502/m6502.h"
 #include "cpu/z80/z80.h"
 #include "cpu/m6805/m68705.h"
+#include "machine/mb8421.h"
 #include "machine/upd4701.h"
-#include "sound/2203intf.h"
-#include "sound/3812intf.h"
 #include "sound/okim6295.h"
+#include "sound/ymopn.h"
+#include "sound/ymopl.h"
 #include "speaker.h"
 
 
@@ -410,12 +479,6 @@ void dec0_automat_state::automat_control_w(offs_t offset, uint16_t data, uint16_
 	}
 }
 
-void dec0_state::midres_sound_w(offs_t offset, uint16_t data, uint16_t mem_mask)
-{
-	if (ACCESSING_BITS_0_7)
-		m_soundlatch->write(data & 0xff);
-}
-
 /******************************************************************************/
 
 void dec0_state::dec0_map(address_map &map)
@@ -456,6 +519,15 @@ void dec0_state::dec0_map(address_map &map)
 	map(0xffc000, 0xffc7ff).ram().share("spriteram");
 }
 
+void dec0_state::ffantasybl_map(address_map &map)
+{
+	dec0_map(map);
+
+	map(0x0024c880, 0x0024cbff).ram(); // what is this? layer 3-related??
+	map(0x00242024, 0x00242025).r(FUNC(dec0_state::ffantasybl_242024_r));
+	map(0x00ff87ee, 0x00ff87ef).portr("VBLANK");
+}
+
 void dec0_state::dec0_tb_map(address_map &map)
 {
 	dec0_map(map);
@@ -470,14 +542,14 @@ void dec0_state::dec0_tb_map(address_map &map)
 void dec0_state::robocop_map(address_map &map)
 {
 	dec0_map(map);
-	map(0x180000, 0x180fff).rw(FUNC(dec0_state::robocop_68000_share_r), FUNC(dec0_state::robocop_68000_share_w));
+	map(0x180000, 0x180fff).rw("dem01", FUNC(mb8421_device::left_r), FUNC(mb8421_device::left_w)).umask16(0x00ff);
 }
 
 void dec0_state::robocop_sub_map(address_map &map)
 {
 	map(0x000000, 0x00ffff).rom();
 	map(0x1f0000, 0x1f1fff).ram();                                 /* Main ram */
-	map(0x1f2000, 0x1f3fff).ram().share("robocop_shared");  /* Shared ram */
+	map(0x1f2000, 0x1f27ff).rw("dem01", FUNC(mb8421_device::right_r), FUNC(mb8421_device::right_w));  /* Shared ram */
 }
 
 void dec0_state::hippodrm_map(address_map &map)
@@ -674,7 +746,7 @@ void dec0_state::midresb_map(address_map &map)
 	map(0x160010, 0x160011).w(FUNC(dec0_state::priority_w));
 	map(0x180000, 0x18000f).r(FUNC(dec0_state::dec0_controls_r));
 	map(0x180012, 0x180013).noprw();
-	map(0x180014, 0x180015).w(FUNC(dec0_state::midres_sound_w));
+	map(0x180015, 0x180015).w(m_soundlatch, FUNC(generic_latch_8_device::write));
 	map(0x180018, 0x180019).noprw();
 	map(0x1a0000, 0x1a0001).portr("AN0");
 	map(0x1a0008, 0x1a0009).portr("AN1");
@@ -974,16 +1046,16 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( trackball_ports )
 	PORT_START("track_0")
-	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_X ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_RESET PORT_REVERSE PORT_PLAYER(1)
+	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_X ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_REVERSE PORT_PLAYER(1)
 
 	PORT_START("track_1")
-	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_Y ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_RESET PORT_PLAYER(1)
+	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_Y ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_PLAYER(1)
 
 	PORT_START("track_2")
-	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_X ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_RESET PORT_REVERSE PORT_PLAYER(2)
+	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_X ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_REVERSE PORT_PLAYER(2)
 
 	PORT_START("track_3")
-	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_Y ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_RESET PORT_PLAYER(2)
+	PORT_BIT( 0x0fff, 0, IPT_TRACKBALL_Y ) PORT_SENSITIVITY(50) PORT_KEYDELTA(24) PORT_PLAYER(2)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( rotary_null )
@@ -1469,9 +1541,9 @@ static INPUT_PORTS_START( midres )
 	PORT_DIPUNUSED_DIPLOC( 0x0080, IP_ACTIVE_LOW, "SW1:8" ) // Always OFF
 
 	PORT_DIPNAME( 0x0300, 0x0300, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW2:1,2")
+	PORT_DIPSETTING(      0x0100, "1" )
 	PORT_DIPSETTING(      0x0300, "3" )
-	PORT_DIPSETTING(      0x0200, "4" )
-	PORT_DIPSETTING(      0x0100, "5" )
+	PORT_DIPSETTING(      0x0200, "5" )
 	PORT_DIPSETTING(      0x0000, "Infinite (Cheat)")
 	PORT_DIPNAME( 0x0c00, 0x0c00, DEF_STR( Difficulty ) ) PORT_DIPLOCATION("SW2:3,4")
 	PORT_DIPSETTING(      0x0800, DEF_STR( Easy ) )
@@ -1490,17 +1562,6 @@ static INPUT_PORTS_START( midres )
 	PORT_DIPUNUSED_DIPLOC( 0x8000, IP_ACTIVE_LOW, "SW2:8" ) // Always OFF
 
 	PORT_INCLUDE( rotary_ports )
-INPUT_PORTS_END
-
-static INPUT_PORTS_START( midresu )
-	PORT_INCLUDE( midres )
-
-	PORT_MODIFY("DSW")
-	PORT_DIPNAME( 0x0300, 0x0300, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW2:1,2")
-	PORT_DIPSETTING(      0x0100, "1" )
-	PORT_DIPSETTING(      0x0300, "3" )
-	PORT_DIPSETTING(      0x0200, "5" )
-	PORT_DIPSETTING(      0x0000, "Infinite (Cheat)")
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( midresb )
@@ -1777,18 +1838,18 @@ void dec0_state::dec0(machine_config &config)
 	SPEAKER(config, "mono").front_center();
 
 	ym2203_device &ym1(YM2203(config, "ym1", XTAL(12'000'000) / 8));
-	ym1.add_route(0, "mono", 0.90);
-	ym1.add_route(1, "mono", 0.90);
-	ym1.add_route(2, "mono", 0.90);
-	ym1.add_route(3, "mono", 0.35);
+	ym1.add_route(0, "mono", 0.81);
+	ym1.add_route(1, "mono", 0.81);
+	ym1.add_route(2, "mono", 0.81);
+	ym1.add_route(3, "mono", 0.32);
 	ym1.irq_handler().set_inputline(m_audiocpu, 0); // Schematics show both ym2203 and ym3812 can trigger IRQ, but Bandit is only game to program 2203 to do so
 
 	ym3812_device &ym2(YM3812(config, "ym2", XTAL(12'000'000) / 4));
 	ym2.irq_handler().set_inputline(m_audiocpu, 0);
-	ym2.add_route(ALL_OUTPUTS, "mono", 0.80);
+	ym2.add_route(ALL_OUTPUTS, "mono", 0.72);
 
 	okim6295_device &oki(OKIM6295(config, "oki", XTAL(20'000'000) / 2 / 10, okim6295_device::PIN7_HIGH));
-	oki.add_route(ALL_OUTPUTS, "mono", 0.80);
+	oki.add_route(ALL_OUTPUTS, "mono", 0.72);
 }
 
 
@@ -2111,6 +2172,10 @@ void dec0_state::robocop(machine_config &config)
 	m_subcpu->set_addrmap(AS_PROGRAM, &dec0_state::robocop_sub_map);
 	m_subcpu->add_route(ALL_OUTPUTS, "mono", 0); // internal sound unused
 
+	mb8421_device &dem01(MB8421(config, "dem01"));
+	dem01.intl_callback().set_inputline(m_maincpu, M68K_IRQ_4);
+	dem01.intr_callback().set_inputline(m_subcpu, 0);
+
 	config.set_maximum_quantum(attotime::from_hz(3000));  /* Interleave between HuC6280 & 68000 */
 
 	/* video hardware */
@@ -2145,9 +2210,10 @@ void dec0_state::hippodrm(machine_config &config)
 }
 
 void dec0_state::ffantasybl(machine_config &config)
-
 {
 	dec0(config);
+
+	m_maincpu->set_addrmap(AS_PROGRAM, &dec0_state::ffantasybl_map);
 
 //  H6280(config, m_subcpu, XTAL(21'477'272) / 16);
 //  m_subcpu->set_addrmap(AS_PROGRAM, &dec0_state::hippodrm_sub_map);
@@ -2213,6 +2279,8 @@ void dec0_state::midres(machine_config &config)
 	m_spritegen->set_colpri_callback(FUNC(dec0_state::midres_colpri_cb));
 
 	m_gfxdecode->set_info(gfx_midres);
+
+	subdevice<okim6295_device>("oki")->set_clock(XTAL(1'056'000));
 }
 
 void dec0_state::midresb(machine_config &config)
@@ -4112,14 +4180,6 @@ ROM_START( bouldashj )
 ROM_END
 
 
-void dec0_state::init_midresb()
-{
-//  m_maincpu->space(AS_PROGRAM).install_read_handler(0x00180000, 0x0018000f, read16_delegate(*this, FUNC(dec0_state::dec0_controls_r)));
-//  m_maincpu->space(AS_PROGRAM).install_read_handler(0x001a0000, 0x001a000f, read16_delegate(*this, FUNC(dec0_state::dec0_rotary_r)));
-
-//  m_maincpu->space(AS_PROGRAM).install_write_handler(0x00180014, 0x00180015, write16_delegate(*this, FUNC(dec0_state::midres_sound_w)));
-}
-
 uint16_t dec0_state::ffantasybl_242024_r()
 {
 /*
@@ -4131,14 +4191,6 @@ uint16_t dec0_state::ffantasybl_242024_r()
 */
 
 	return 0xffff;
-}
-
-void dec0_state::init_ffantasybl()
-{
-	m_maincpu->space(AS_PROGRAM).install_ram(0x24c880, 0x24cbff); // what is this? layer 3-related??
-
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x00242024, 0x00242025, read16smo_delegate(*this, FUNC(dec0_state::ffantasybl_242024_r)));
-	m_maincpu->space(AS_PROGRAM).install_read_port(0x00ff87ee, 0x00ff87ef, "VBLANK");
 }
 
 /******************************************************************************/
@@ -4167,8 +4219,8 @@ GAME( 1989, slyspy,     secretag, slyspy,     slyspy,     dec0_state, init_slysp
 GAME( 1989, slyspy3,    secretag, slyspy,     slyspy,     dec0_state, init_slyspy,     ROT0,   "Data East USA",         "Sly Spy (US revision 3)", MACHINE_SUPPORTS_SAVE )
 GAME( 1989, slyspy2,    secretag, slyspy,     slyspy,     dec0_state, init_slyspy,     ROT0,   "Data East USA",         "Sly Spy (US revision 2)", MACHINE_SUPPORTS_SAVE )
 GAME( 1989, midres,     0,        midres,     midres,     dec0_state, empty_init,      ROT0,   "Data East Corporation", "Midnight Resistance (World)", MACHINE_SUPPORTS_SAVE )
-GAME( 1989, midresu,    midres,   midres,     midresu,    dec0_state, empty_init,      ROT0,   "Data East USA",         "Midnight Resistance (US)", MACHINE_SUPPORTS_SAVE )
-GAME( 1989, midresj,    midres,   midres,     midresu,    dec0_state, empty_init,      ROT0,   "Data East Corporation", "Midnight Resistance (Japan)", MACHINE_SUPPORTS_SAVE )
+GAME( 1989, midresu,    midres,   midres,     midres,     dec0_state, empty_init,      ROT0,   "Data East USA",         "Midnight Resistance (US)", MACHINE_SUPPORTS_SAVE )
+GAME( 1989, midresj,    midres,   midres,     midres,     dec0_state, empty_init,      ROT0,   "Data East Corporation", "Midnight Resistance (Japan)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, bouldash,   0,        slyspy,     bouldash,   dec0_state, init_slyspy,     ROT0,   "Data East Corporation (licensed from First Star)", "Boulder Dash / Boulder Dash Part 2 (World)", MACHINE_SUPPORTS_SAVE )
 GAME( 1990, bouldashj,  bouldash, slyspy,     bouldash,   dec0_state, init_slyspy,     ROT0,   "Data East Corporation (licensed from First Star)", "Boulder Dash / Boulder Dash Part 2 (Japan)", MACHINE_SUPPORTS_SAVE )
 
@@ -4180,9 +4232,9 @@ GAME( 1988, drgninjab,  baddudes, drgninjab,  drgninja,   dec0_state, init_drgni
 
 
 // this is a common bootleg board
-GAME( 1989, midresb,    midres,   midresb,    midresb,    dec0_state, init_midresb,    ROT0, "bootleg", "Midnight Resistance (bootleg with 68705)", MACHINE_SUPPORTS_SAVE ) // need to hook up 68705? (probably unused)
-GAME( 1989, midresbj,   midres,   midresbj,   midresb,    dec0_state, init_midresb,    ROT0, "bootleg", "Midnight Resistance (Joystick bootleg)", MACHINE_SUPPORTS_SAVE )
-GAME( 1989, ffantasybl, hippodrm, ffantasybl, ffantasybl, dec0_state, init_ffantasybl, ROT0, "bootleg", "Fighting Fantasy (bootleg with 68705)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING ) // 68705 not dumped, might be the same as midresb
+GAME( 1989, midresb,    midres,   midresb,    midresb,    dec0_state, empty_init,      ROT0, "bootleg", "Midnight Resistance (bootleg with 68705)", MACHINE_SUPPORTS_SAVE ) // need to hook up 68705? (probably unused)
+GAME( 1989, midresbj,   midres,   midresbj,   midresb,    dec0_state, empty_init,      ROT0, "bootleg", "Midnight Resistance (Joystick bootleg)", MACHINE_SUPPORTS_SAVE )
+GAME( 1989, ffantasybl, hippodrm, ffantasybl, ffantasybl, dec0_state, empty_init,      ROT0, "bootleg", "Fighting Fantasy (bootleg with 68705)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING ) // 68705 not dumped, might be the same as midresb
 GAME( 1988, drgninjab2, baddudes, drgninjab,  drgninja,   dec0_state, init_drgninja,   ROT0, "bootleg", "Dragonninja (bootleg with 68705)", MACHINE_SUPPORTS_SAVE ) // is this the same board as above? (region warning hacked to World, but still shows Japanese text), 68705 dumped but not hooked up
 
 // these are different to the above but quite similar to each other

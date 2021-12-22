@@ -79,6 +79,9 @@
 #include "screen.h"
 #include "speaker.h"
 
+
+namespace {
+
 #define SPEEDUP_HACKS   1
 
 class mediagx_state : public pcat_base_state
@@ -124,6 +127,7 @@ private:
 	void parallel_port_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
 	uint32_t ad1847_r(offs_t offset);
 	void ad1847_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
+	[[maybe_unused]] void bios_ram_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
 	uint8_t io20_r(offs_t offset);
 	void io20_w(offs_t offset, uint8_t data);
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
@@ -498,11 +502,9 @@ void mediagx_state::biu_ctrl_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 	}
 }
 
-#ifdef UNUSED_FUNCTION
 void mediagx_state::bios_ram_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 {
 }
-#endif
 
 uint8_t mediagx_state::io20_r(offs_t offset)
 {
@@ -912,6 +914,10 @@ void mediagx_state::mediagx(machine_config &config)
 void mediagx_state::init_mediagx()
 {
 	m_frame_width = m_frame_height = 1;
+	m_parallel_pointer = 0;
+	std::fill(std::begin(m_disp_ctrl_reg), std::end(m_disp_ctrl_reg), 0);
+	std::fill(std::begin(m_biu_ctrl_reg), std::end(m_biu_ctrl_reg), 0);
+	std::fill(std::begin(m_speedup_hits), std::end(m_speedup_hits), 0);
 }
 
 #if SPEEDUP_HACKS
@@ -943,7 +949,7 @@ void mediagx_state::report_speedups()
 
 void mediagx_state::install_speedups(const speedup_entry *entries, int count)
 {
-	assert(count < ARRAY_LENGTH(s_speedup_handlers));
+	assert(count < std::size(s_speedup_handlers));
 
 	m_speedup_table = entries;
 	m_speedup_count = count;
@@ -977,7 +983,7 @@ void mediagx_state::init_a51site4()
 	init_mediagx();
 
 #if SPEEDUP_HACKS
-	install_speedups(a51site4_speedups, ARRAY_LENGTH(a51site4_speedups));
+	install_speedups(a51site4_speedups, std::size(a51site4_speedups));
 #endif
 }
 
@@ -1014,6 +1020,8 @@ ROM_START( a51site4a ) /* When dumped connected straight to IDE the cylinders we
 	DISK_REGION( "ide:0:hdd:image" )
 	DISK_IMAGE( "a51site4-2_0", 0, SHA1(4de421e4d1708ecbdfb50730000814a1ea36a044) ) /* Stock drive, sticker on drive shows REV 2.0 and Test Mode screen shows the date September 11, 1998 */
 ROM_END
+
+} // Anonymous namespace
 
 
 /*****************************************************************************/

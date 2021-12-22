@@ -1,5 +1,5 @@
 // license:BSD-3-Clause
-// copyright-holders:Manuel Abadia
+// copyright-holders:Manuel Abadia, David Haywood
 /***************************************************************************
 
     Gaelco CG-1V/GAE1 based games
@@ -23,6 +23,7 @@
     Cardioline Stepper     | 1997 | CG-1V 288   | 970410   | IO board ST62T15B6 MCU (not really protection)
     Bang!                  | 1998 | CG-1V 388   | 980921/1 | No
     Super Roller           | 1998 | CG-1V-218   |          | DS5002FP (by Nova Desitec)
+    Champion Pool          | 1999 | CG-1V-138   | 0005487  | DS5002FP (by Nova Desitec)
     Play 2000              | 1999 | CG-1V-149   | 990315   | DS5002FP (by Nova Desitec)
     -----------------------+------+-------------+----------+--------------------------------------------------
 
@@ -42,7 +43,7 @@
 #include "machine/eepromser.h"
 #include "sound/gaelco.h"
 
-#include "rendlay.h"
+#include "layout/generic.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -193,7 +194,7 @@ void gaelco2_state::maniacsq(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -477,7 +478,7 @@ void gaelco2_state::saltcrdi(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -962,6 +963,30 @@ ROM_START( srollnd )
 	ROM_LOAD( "pal16l8acn.u17", 0x117, 0x104, NO_DUMP )
 ROM_END
 
+ROM_START( chmppool )
+	ROM_REGION( 0x100000, "maincpu", 0 )
+	ROM_LOAD16_BYTE( "nd2.u44",    0x000001, 0x010000, CRC(0e55d634) SHA1(c5c6a074ddfd7c25b957f1c7777b8ddcafc3f192) )
+	ROM_LOAD16_BYTE( "nd1.u45",    0x000000, 0x010000, CRC(f10f4578) SHA1(b63649b2a3dd3712c1d15c345323307899635e1e) )
+
+	ROM_REGION( 0x8000, "gaelco_ds5002fp:sram", 0 )
+	ROM_LOAD( "chmppool.ds5002fp", 0x00000, 0x8000, NO_DUMP )
+
+	ROM_REGION( 0x100, "gaelco_ds5002fp:mcu:internal", ROMREGION_ERASE00 ) // TODO: correct these
+	DS5002FP_SET_MON( 0x19 )
+	DS5002FP_SET_RPCTL( 0x00 )
+	DS5002FP_SET_CRCR( 0x80 )
+
+	ROM_REGION( 0x0a00000, "gfx1", ROMREGION_ERASE00 ) // GFX + Sound
+	ROM_LOAD( "nd5.u49", 0x0000000, 0x080000, CRC(a71c1ee7) SHA1(f7d90537a007291bf1739b57a6dd06e05e243cf8) )
+	ROM_LOAD( "nd3.u51", 0x0200000, 0x020000, CRC(926ca7d5) SHA1(9129f4738a46b829f73b50f53641e60acb1ce2ba) )
+	ROM_LOAD( "nd6.u48", 0x0400000, 0x020000, CRC(a5c25b87) SHA1(593418f15d593206f8fe3dde35571496aae71500) )
+	ROM_LOAD( "nd4.u50", 0x0600000, 0x020000, CRC(d4f349cc) SHA1(c786c4142942f19f62bd3cf4f45e68d8a44aab38) )
+
+	ROM_REGION( 0x21b, "pals", 0 )
+	ROM_LOAD( "palce16v8h.u16", 0x000, 0x117, NO_DUMP )
+	ROM_LOAD( "pal16l8acn.u17", 0x117, 0x104, NO_DUMP )
+ROM_END
+
 void gaelco2_state::play2000(machine_config &config)
 {
 	/* basic machine hardware */
@@ -985,7 +1010,7 @@ void gaelco2_state::play2000(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -1024,7 +1049,7 @@ void gaelco2_state::srollnd(machine_config& config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -1129,7 +1154,7 @@ void bang_state::bang(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -1374,7 +1399,7 @@ void gaelco2_state::alighunt(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -1725,7 +1750,7 @@ void gaelco2_state::touchgo(machine_config &config)
 	/* video hardware */
 	BUFFERED_SPRITERAM16(config, m_spriteram);
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 	config.set_default_layout(layout_dualhsxs);
 
 	screen_device &lscreen(SCREEN(config, "lscreen", SCREEN_TYPE_RASTER));
@@ -2044,7 +2069,7 @@ void gaelco2_state::snowboar(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -2088,7 +2113,7 @@ void gaelco2_state::maniacsqs(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 
 	MCFG_VIDEO_START_OVERRIDE(gaelco2_state,gaelco2)
 
@@ -2369,7 +2394,7 @@ void wrally2_state::wrally2(machine_config &config)
 	/* video hardware */
 	BUFFERED_SPRITERAM16(config, m_spriteram);
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_gaelco2);
-	PALETTE(config, m_palette).set_entries(4096*16 - 16);   /* game's palette is 4096 but we allocate 15 more for shadows & highlights */
+	PALETTE(config, m_palette).set_entries(0x10000);
 	config.set_default_layout(layout_dualhsxs);
 
 	screen_device &lscreen(SCREEN(config, "lscreen", SCREEN_TYPE_RASTER));
@@ -2697,10 +2722,10 @@ GAME( 1994, aligatorun,  aligator,  alighunt,         alighunt, gaelco2_state, i
 GAME( 1994, aligatoruna, aligator,  alighunt,         alighunt, gaelco2_state, init_alighunt,  ROT0, "Gaelco", "Alligator Hunt (unprotected, set 2)", 0 ) // strange version, starts on space stages, but clearly a recompile not a trivial hack of the above, show version maybe?
 GAME( 1994, aligatorp,   aligator,  alighunt_d5002fp, alighunt, gaelco2_state, empty_init,     ROT0, "Gaelco", "Alligator Hunt (protected, prototype?)", MACHINE_NOT_WORKING ) // requires different protection program / data
 
-GAME( 1995, touchgo,     0,         touchgo_d5002fp,  touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (World)", MACHINE_IMPERFECT_SOUND )
-GAME( 1995, touchgon,    touchgo,   touchgo_d5002fp,  touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (Non North America)", MACHINE_IMPERFECT_SOUND )
-GAME( 1995, touchgoe,    touchgo,   touchgo_d5002fp,  touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (earlier revision)",  MACHINE_IMPERFECT_SOUND )
-GAME( 1995, touchgok,    touchgo,   touchgo,          touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (Korea, unprotected)", MACHINE_IMPERFECT_SOUND ) // doesn't say 'Korea' but was sourced there, shows 2 copyright lines like the 'earlier revision'
+GAME( 1995, touchgo,     0,         touchgo_d5002fp,  touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (World)", 0 )
+GAME( 1995, touchgon,    touchgo,   touchgo_d5002fp,  touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (Non North America)", 0 )
+GAME( 1995, touchgoe,    touchgo,   touchgo_d5002fp,  touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (earlier revision)",  0 )
+GAME( 1995, touchgok,    touchgo,   touchgo,          touchgo,  gaelco2_state, init_touchgo,   ROT0, "Gaelco", "Touch & Go (Korea, unprotected)", 0 ) // doesn't say 'Korea' but was sourced there, shows 2 copyright lines like the 'earlier revision'
 
 GAME( 1995, wrally2,     0,         wrally2,          wrally2,  wrally2_state, init_wrally2,   ROT0, "Gaelco", "World Rally 2: Twin Racing (mask ROM version)", 0 )
 GAME( 1995, wrally2a,    wrally2,   wrally2,          wrally2,  wrally2_state, empty_init,     ROT0, "Gaelco", "World Rally 2: Twin Racing (EPROM version)", 0 )
@@ -2724,6 +2749,8 @@ GAME( 1999, play2000_50i,play2000,  play2000,         play2000, gaelco2_state, e
 GAME( 1999, play2000_40i,play2000,  play2000,         play2000, gaelco2_state, init_play2000,  ROT0, "Nova Desitec", "Play 2000 (Super Slot & Gran Tesoro) (v4.0i) (Italy)",  0 )
 
 GAME( 1998, srollnd,     0,         srollnd,          play2000, gaelco2_state, init_play2000,  ROT0, "Nova Desitec", "Super Roller (v7.0)",  MACHINE_NOT_WORKING ) // missing ds5002fp dump
+
+GAME( 1999, chmppool,    0,         srollnd,          play2000, gaelco2_state, init_play2000,  ROT0, "Nova Desitec", "Champion Pool (v1.0)",  MACHINE_NOT_WORKING ) // missing ds5002fp dump
 
 // Gym equipment
 GAME( 1997, sltpcycl,   0,          saltcrdi,         saltcrdi, gaelco2_state, init_play2000,  ROT0, "Salter Fitness / Gaelco", "Pro Cycle Tele Cardioline (Salter Fitness Bike V.1.0, Checksum 02AB)", 0 ) // Same board and ROM as Pro Reclimber

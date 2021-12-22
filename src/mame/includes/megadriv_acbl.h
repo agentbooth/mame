@@ -11,7 +11,6 @@ public:
 	: md_base_state(mconfig, type, tag) { m_protcount = 0;}
 
 	void megadrvb(machine_config &config);
-	void megadrvb_6b(machine_config &config);
 	void md_bootleg(machine_config &config);
 	void puckpkmn(machine_config &config);
 	void jzth(machine_config &config);
@@ -25,9 +24,12 @@ public:
 	void init_puckpkmn();
 	void init_hshavoc();
 	void init_barek2();
+	void init_barek2ch();
 	void init_barek3();
+	void init_barekch();
 	void init_bk3ssrmb();
 	void init_sonic2mb();
+	void init_sonic3mb();
 	void init_twinktmb();
 	void init_jparkmb();
 	void init_sbubsm();
@@ -39,6 +41,7 @@ private:
 	uint16_t aladmdb_r();
 	uint16_t barek2mb_r();
 	uint16_t jparkmb_r();
+	uint16_t sonic3mb_r();
 	uint16_t twinktmb_r();
 	uint16_t dsw_r(offs_t offset);
 	uint16_t topshoot_200051_r();
@@ -46,9 +49,6 @@ private:
 	uint16_t sbubsm_400002_r();
 	uint16_t puckpkmna_70001c_r();
 	uint16_t puckpkmna_4b2476_r();
-
-	DECLARE_MACHINE_START(md_bootleg) { MACHINE_START_CALL_MEMBER(megadriv); m_vdp->stop_timers(); }
-	DECLARE_MACHINE_START(md_6button);
 
 	void jzth_map(address_map &map);
 	void md_bootleg_map(address_map &map);
@@ -59,6 +59,21 @@ private:
 	int m_aladmdb_mcu_port;
 
 	int m_protcount;
+};
+
+class md_boot_6button_state : public md_boot_state
+{
+public:
+	md_boot_6button_state(const machine_config& mconfig, device_type type, const char* tag)
+		: md_boot_state(mconfig, type, tag)
+	{
+	}
+
+	void megadrvb_6b(machine_config &config);
+
+protected:
+	virtual void machine_start() override;
+
 };
 
 #endif // MAME_INCLUDES_MEGADRIV_ACBL_H

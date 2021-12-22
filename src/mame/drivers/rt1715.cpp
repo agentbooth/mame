@@ -9,8 +9,6 @@
     Notes:
     - keyboard connected to sio channel a
     - sio channel a clock output connected to ctc trigger 0
-    - memory map not 100% clear
-    - rt1715w: SCP3 boot loops while executing PROFILE.SUB
 
     Docs:
     - http://www.robotrontechnik.de/html/computer/pc1715w.htm
@@ -806,8 +804,8 @@ void rt1715_state::rt1715w(machine_config &config)
 	// operates in polled mode
 	I8272A(config, m_fdc, 8'000'000 / 4, false);
 	m_fdc->drq_wr_callback().set(m_dma, FUNC(z80dma_device::rdy_w)).invert();
-	FLOPPY_CONNECTOR(config, "i8272:0", rt1715w_floppies, "525qd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "i8272:1", rt1715w_floppies, "525qd", floppy_image_device::default_floppy_formats);
+	FLOPPY_CONNECTOR(config, "i8272:0", rt1715w_floppies, "525qd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "i8272:1", rt1715w_floppies, "525qd", floppy_image_device::default_mfm_floppy_formats);
 
 	Z80DMA(config, m_dma, 15.9744_MHz_XTAL / 4);
 	m_dma->out_busreq_callback().set(FUNC(rt1715_state::busreq_w));

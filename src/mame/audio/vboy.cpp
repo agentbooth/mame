@@ -4,7 +4,7 @@
     vboy.c - Virtual Boy audio emulation
 
     By Richard Bannister and Gil Pedersen.
-    MESS device adaptation by R. Belmont
+    MAME device adaptation by R. Belmont
 */
 
 #include "emu.h"
@@ -442,6 +442,7 @@ void vboysnd_device::write(offs_t offset, uint8_t data)
 					break;
 				}
 			}
+			[[fallthrough]]; // FIXME: really?
 		case SxINT:
 			if (channel < 5)
 			{

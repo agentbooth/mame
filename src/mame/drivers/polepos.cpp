@@ -236,7 +236,6 @@ Todo:
 #include "machine/watchdog.h"
 #include "sound/dac.h"
 #include "sound/tms5220.h"
-#include "sound/volt_reg.h"
 #include "speaker.h"
 
 #include "polepos.lh"
@@ -695,7 +694,7 @@ static INPUT_PORTS_START( polepos2 )
 	PORT_DIPNAME( 0x02, 0x02, DEF_STR( Demo_Sounds ) )  PORT_DIPLOCATION("SW1:7")
 	PORT_DIPSETTING(    0x00, DEF_STR( Off ))
 	PORT_DIPSETTING(    0x02, DEF_STR( On ) )
-	PORT_DIPNAME( 0x01, 0x01, DEF_STR( Unknown ) )      PORT_DIPLOCATION("SW1:8")  /* docs say "freeze", but it doesn't seem to work */
+	PORT_DIPNAME( 0x01, 0x01, "Freeze" )                PORT_DIPLOCATION("SW1:8")
 	PORT_DIPSETTING(    0x01, DEF_STR( Off ))
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 
@@ -781,7 +780,7 @@ static INPUT_PORTS_START( polepos2bi )
 	PORT_DIPNAME( 0x40, 0x00, DEF_STR( Game_Time ) )    PORT_DIPLOCATION("SWB:6")
 	PORT_DIPSETTING(    0x00, "90 secs." )
 	PORT_DIPSETTING(    0x40, "120 secs." )
-	PORT_DIPNAME( 0x80, 0x00, DEF_STR( Pause ) )         PORT_DIPLOCATION("SWB:8")
+	PORT_DIPNAME( 0x80, 0x00, "Freeze" )                PORT_DIPLOCATION("SWB:8")
 	PORT_DIPSETTING(    0x00, DEF_STR( Off ))
 	PORT_DIPSETTING(    0x80, DEF_STR( On ) )
 INPUT_PORTS_END
@@ -1058,10 +1057,6 @@ void polepos_state::topracern(machine_config &config)
 	dac_4bit_r2r_device &dac(DAC_4BIT_R2R(config, "dac", 0)); // unknown resistor configuration
 	dac.add_route(ALL_OUTPUTS, "lspeaker", 0.12);
 	dac.add_route(ALL_OUTPUTS, "rspeaker", 0.12);
-
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 void polepos_state::polepos2bi(machine_config &config)

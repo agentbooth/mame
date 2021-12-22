@@ -6,7 +6,7 @@
  * Barry Silverman mailto:barry@disus.com or mailto:bss@media.mit.edu
  * Vadim Gerasimov mailto:vadim@media.mit.edu
  *
- * MESS driver by Chris Salomon and Raphael Nabet.
+ * MAME driver by Chris Salomon and Raphael Nabet.
  *
  * Basically, it has been rewritten entirely in order to perform cycle-level simulation
  * (with only a few flip-flops being set one cycle too early or too late).  I don't know if
@@ -551,6 +551,7 @@ void pdp1_device::device_start()
 	{
 	default:
 		m_extend_support = 0;
+		[[fallthrough]];
 	case 0:     /* no extension */
 		m_extended_address_mask = 07777;
 		m_address_extension_mask = 00000;

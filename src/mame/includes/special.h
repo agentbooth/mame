@@ -22,6 +22,7 @@
 #include "formats/smx_dsk.h"
 #include "formats/rk_cas.h"
 #include "machine/wd_fdc.h"
+#include "machine/timer.h"
 #include "machine/ram.h"
 #include "emupal.h"
 
@@ -50,6 +51,7 @@ public:
 		, m_bank6(*this, "bank6")
 		, m_io_keyboard(*this, "LINE%u", 0U)
 		, m_palette(*this, "palette")
+		, m_pit_timer(*this, "pit_timer")
 	{ }
 
 	void special(machine_config &config);
@@ -61,15 +63,7 @@ public:
 	void init_erik();
 	void init_special();
 
-protected:
-	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
-
 private:
-	enum
-	{
-		TIMER_PIT8253_GATES
-	};
-
 	// specimx
 	void specimx_select_bank(offs_t offset, uint8_t data);
 	void video_memory_w(offs_t offset, uint8_t data);
@@ -96,6 +90,7 @@ private:
 	void porta_w(uint8_t data);
 	void portb_w(uint8_t data);
 	void portc_w(uint8_t data);
+	TIMER_DEVICE_CALLBACK_MEMBER(pit_timer);
 
 	void erik_palette(palette_device &palette) const;
 	void specimx_palette(palette_device &palette) const;
@@ -104,7 +99,7 @@ private:
 	uint32_t screen_update_specialp(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_specimx(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	DECLARE_WRITE_LINE_MEMBER(fdc_drq);
-	DECLARE_FLOPPY_FORMATS( specimx_floppy_formats );
+	static void specimx_floppy_formats(format_registration &fr);
 	void machine_start() override;
 	void machine_reset() override;
 
@@ -144,6 +139,7 @@ private:
 	optional_memory_bank m_bank6;
 	required_ioport_array<13> m_io_keyboard;
 	required_device<palette_device> m_palette;
+	optional_device<timer_device> m_pit_timer; // specimx only
 };
 
 #endif // MAME_INCLUDES_SPECIAL_H

@@ -3,14 +3,6 @@
 
 /*
 
-Driver is marked as NOT WORKING because interaction between BIOS and 68k side is
-not fully understood.  The BIOS often doesn't register that a game has been started
-and leaves the 'PRESS P1 OR P2 START' message onscreen during gameplay as a result.
-If this happens, the games usually then crash when you run out of lives as they end
-up in an unknown state.
-
-
-
 About MegaPlay:
 
 Megaplay games are specially designed Genesis games, produced for arcade use.
@@ -67,6 +59,9 @@ public:
 	DECLARE_READ_LINE_MEMBER(start1_r);
 	DECLARE_READ_LINE_MEMBER(start2_r);
 
+protected:
+	virtual void machine_reset() override;
+
 private:
 
 	uint16_t extra_ram_r(offs_t offset);
@@ -88,8 +83,6 @@ private:
 	void game_w(uint8_t data);
 	uint8_t vdp1_count_r(offs_t offset);
 
-	DECLARE_VIDEO_START(megplay);
-	DECLARE_MACHINE_RESET(megaplay);
 	uint32_t screen_update_megplay(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
 	void megaplay_bios_io_map(address_map &map);
@@ -202,15 +195,15 @@ static INPUT_PORTS_START ( mp_sonic )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x03, 0x01, "Initial Players" ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "4" )
-	PORT_DIPSETTING( 0x01, "3" )
-	PORT_DIPSETTING( 0x02, "2" )
 	PORT_DIPSETTING( 0x03, "1" )
+	PORT_DIPSETTING( 0x02, "2" )
+	PORT_DIPSETTING( 0x01, "3" )
+	PORT_DIPSETTING( 0x00, "4" )
 	PORT_DIPNAME( 0x0c, 0x0c, DEF_STR( Difficulty ) ) PORT_DIPLOCATION("SW3:3,4")
-	PORT_DIPSETTING( 0x00, DEF_STR( Hardest ) )
-	PORT_DIPSETTING( 0x04, DEF_STR( Hard ) )
 	PORT_DIPSETTING( 0x08, DEF_STR( Easy ) )
 	PORT_DIPSETTING( 0x0c, DEF_STR( Normal ) )
+	PORT_DIPSETTING( 0x04, DEF_STR( Hard ) )
+	PORT_DIPSETTING( 0x00, DEF_STR( Hardest ) )
 	// Who knows...
 //  PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_UNKNOWN ) PORT_NAME("0x6201 bit 4") PORT_CODE(KEYCODE_G)
 //  PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN ) PORT_NAME("0x6201 bit 5") PORT_CODE(KEYCODE_H)
@@ -268,17 +261,17 @@ static INPUT_PORTS_START ( mp_twc )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x01, 0x01, "Time" ) PORT_DIPLOCATION("SW3:1")
-	PORT_DIPSETTING( 0x01, DEF_STR( Normal ) )
 	PORT_DIPSETTING( 0x00, "Short" )
+	PORT_DIPSETTING( 0x01, DEF_STR( Normal ) )
 	PORT_DIPNAME( 0x0e, 0x08, "Level" ) PORT_DIPLOCATION("SW3:2,3,4")
-	PORT_DIPSETTING( 0x00, "0" )
-	PORT_DIPSETTING( 0x02, "0" )
-	PORT_DIPSETTING( 0x04, "5" )
-	PORT_DIPSETTING( 0x06, "4" )
-	PORT_DIPSETTING( 0x08, "3" )
-	PORT_DIPSETTING( 0x0a, "2" )
-	PORT_DIPSETTING( 0x0c, "1" )
+	PORT_DIPSETTING( 0x00, "0 (duplicate 1)" )
+	PORT_DIPSETTING( 0x02, "0 (duplicate 2)" )
 	PORT_DIPSETTING( 0x0e, "0" )
+	PORT_DIPSETTING( 0x0c, "1" )
+	PORT_DIPSETTING( 0x0a, "2" )
+	PORT_DIPSETTING( 0x08, "3" )
+	PORT_DIPSETTING( 0x06, "4" )
+	PORT_DIPSETTING( 0x04, "5" )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START ( mp_sor2 )
@@ -286,15 +279,15 @@ static INPUT_PORTS_START ( mp_sor2 )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x03, 0x01, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "4" )
-	PORT_DIPSETTING( 0x01, "3" )
-	PORT_DIPSETTING( 0x02, "2" )
 	PORT_DIPSETTING( 0x03, "1" )
+	PORT_DIPSETTING( 0x02, "2" )
+	PORT_DIPSETTING( 0x01, "3" )
+	PORT_DIPSETTING( 0x00, "4" )
 	PORT_DIPNAME( 0xc, 0x0c, DEF_STR ( Difficulty ) ) PORT_DIPLOCATION("SW3:3,4")
-	PORT_DIPSETTING( 0x00, DEF_STR ( Hardest ) )
-	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
 	PORT_DIPSETTING( 0x08, DEF_STR ( Easy ) )
 	PORT_DIPSETTING( 0x0c, DEF_STR ( Normal ) )
+	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
+	PORT_DIPSETTING( 0x00, DEF_STR ( Hardest ) )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START ( mp_bio )
@@ -302,15 +295,15 @@ static INPUT_PORTS_START ( mp_bio )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x03, 0x03, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "5" )
-	PORT_DIPSETTING( 0x01, "4" )
 	PORT_DIPSETTING( 0x02, "2" )
 	PORT_DIPSETTING( 0x03, "3" )
+	PORT_DIPSETTING( 0x01, "4" )
+	PORT_DIPSETTING( 0x00, "5" )
 	PORT_DIPNAME( 0xc, 0x0c, DEF_STR ( Difficulty ) ) PORT_DIPLOCATION("SW3:3,4")
-	PORT_DIPSETTING( 0x00, DEF_STR ( Hardest ) )
-	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
 	PORT_DIPSETTING( 0x08, DEF_STR ( Easy ) )
 	PORT_DIPSETTING( 0x0c, DEF_STR ( Normal ) )
+	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
+	PORT_DIPSETTING( 0x00, DEF_STR ( Hardest ) )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START ( mp_gslam )
@@ -318,14 +311,14 @@ static INPUT_PORTS_START ( mp_gslam )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x07, 0x04, DEF_STR ( Game_Time ) ) PORT_DIPLOCATION("SW3:1,2,3")
-	PORT_DIPSETTING( 0x00, "5:00" )
-	PORT_DIPSETTING( 0x01, "4:30" )
-	PORT_DIPSETTING( 0x02, "4:00" )
-	PORT_DIPSETTING( 0x03, "3:30" )
-	PORT_DIPSETTING( 0x04, "3:00" )
-	PORT_DIPSETTING( 0x05, "2:30" )
-	PORT_DIPSETTING( 0x06, "2:00" )
 	PORT_DIPSETTING( 0x07, "1:30" )
+	PORT_DIPSETTING( 0x06, "2:00" )
+	PORT_DIPSETTING( 0x05, "2:30" )
+	PORT_DIPSETTING( 0x04, "3:00" )
+	PORT_DIPSETTING( 0x03, "3:30" )
+	PORT_DIPSETTING( 0x02, "4:00" )
+	PORT_DIPSETTING( 0x01, "4:30" )
+	PORT_DIPSETTING( 0x00, "5:00" )
 	PORT_DIPNAME( 0x08, 0x08, "2P-Play Continue" ) PORT_DIPLOCATION("SW3:4")
 	PORT_DIPSETTING( 0x00, "1 Credit" )
 	PORT_DIPSETTING( 0x08, "2 Credits" )
@@ -335,14 +328,14 @@ static INPUT_PORTS_START ( mp_mazin )
 	PORT_INCLUDE( megaplay )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
-	PORT_DIPNAME( 0x03, 0x02, "Initial Player" ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "2" )
-	PORT_DIPSETTING( 0x01, "1" )
-	PORT_DIPSETTING( 0x02, "3" )
-	PORT_DIPSETTING( 0x03, "4" )
+	PORT_DIPNAME( 0x03, 0x01, "Initial Player" ) PORT_DIPLOCATION("SW3:1,2")
+	PORT_DIPSETTING( 0x02, "1" )
+	PORT_DIPSETTING( 0x03, "2" )
+	PORT_DIPSETTING( 0x01, "3" )
+	PORT_DIPSETTING( 0x00, "4" )
 	PORT_DIPNAME( 0x04, 0x04, DEF_STR ( Difficulty ) ) PORT_DIPLOCATION("SW3:3")
-	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
-	PORT_DIPSETTING( 0x00, DEF_STR ( Normal ) )
+	PORT_DIPSETTING( 0x04, DEF_STR ( Normal ) )
+	PORT_DIPSETTING( 0x00, DEF_STR ( Hard ) )
 	PORT_DIPNAME( 0x08, 0x08, "Title" ) PORT_DIPLOCATION("SW3:4")
 	PORT_DIPSETTING( 0x08, "EUROPE" )
 	PORT_DIPSETTING( 0x00, "U.S.A" )
@@ -353,15 +346,15 @@ static INPUT_PORTS_START ( mp_soni2 )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x03, 0x01, "Initial Players (Normal mode)" ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "4" )
-	PORT_DIPSETTING( 0x01, "3" )
-	PORT_DIPSETTING( 0x02, "2" )
 	PORT_DIPSETTING( 0x03, "1" )
-	PORT_DIPNAME( 0x0c, 0x0c, "Initial Players (Dual mode)" ) PORT_DIPLOCATION("SW3:3,4")
+	PORT_DIPSETTING( 0x02, "2" )
+	PORT_DIPSETTING( 0x01, "3" )
 	PORT_DIPSETTING( 0x00, "4" )
-	PORT_DIPSETTING( 0x04, "2" )
+	PORT_DIPNAME( 0x0c, 0x0c, "Initial Players (Dual mode)" ) PORT_DIPLOCATION("SW3:3,4")
 	PORT_DIPSETTING( 0x08, "1" )
+	PORT_DIPSETTING( 0x04, "2" )
 	PORT_DIPSETTING( 0x0c, "3" )
+	PORT_DIPSETTING( 0x00, "4" )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START ( mp_shnb3 )
@@ -369,15 +362,15 @@ static INPUT_PORTS_START ( mp_shnb3 )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x03, 0x01, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "4" )
-	PORT_DIPSETTING( 0x01, "3" )
-	PORT_DIPSETTING( 0x02, "2" )
 	PORT_DIPSETTING( 0x03, "1" )
+	PORT_DIPSETTING( 0x02, "2" )
+	PORT_DIPSETTING( 0x01, "3" )
+	PORT_DIPSETTING( 0x00, "4" )
 	PORT_DIPNAME( 0xc, 0x0c, DEF_STR ( Difficulty ) ) PORT_DIPLOCATION("SW3:3,4")
-	PORT_DIPSETTING( 0x00, "Expert" )
-	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
 	PORT_DIPSETTING( 0x08, DEF_STR ( Easy ) )
 	PORT_DIPSETTING( 0x0c, DEF_STR ( Normal ) )
+	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
+	PORT_DIPSETTING( 0x00, "Expert" )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START ( mp_gunhe )
@@ -385,15 +378,15 @@ static INPUT_PORTS_START ( mp_gunhe )
 
 	PORT_MODIFY("DSW1") // DSW C  (per game settings)
 	PORT_DIPNAME( 0x03, 0x01, "Initial Players" ) PORT_DIPLOCATION("SW3:1,2")
-	PORT_DIPSETTING( 0x00, "4" )
-	PORT_DIPSETTING( 0x01, "3" )
-	PORT_DIPSETTING( 0x02, "2" )
 	PORT_DIPSETTING( 0x03, "1" )
+	PORT_DIPSETTING( 0x02, "2" )
+	PORT_DIPSETTING( 0x01, "3" )
+	PORT_DIPSETTING( 0x00, "4" )
 	PORT_DIPNAME( 0x0c, 0x0c, DEF_STR ( Difficulty ) ) PORT_DIPLOCATION("SW3:3,4")
-	PORT_DIPSETTING( 0x00, "Expert" )
-	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
 	PORT_DIPSETTING( 0x08, DEF_STR ( Easy ) )
 	PORT_DIPSETTING( 0x0c, DEF_STR ( Normal ) )
+	PORT_DIPSETTING( 0x04, DEF_STR ( Hard ) )
+	PORT_DIPSETTING( 0x00, "Expert" )
 INPUT_PORTS_END
 
 // MEGAPLAY specific
@@ -656,12 +649,12 @@ uint32_t mplay_state::screen_update_megplay(screen_device &screen, bitmap_rgb32 
 	return 0;
 }
 
-MACHINE_RESET_MEMBER(mplay_state,megaplay)
+void mplay_state::machine_reset()
 {
 	m_bios_mode = MP_ROM;
 	m_bios_bank_addr = 0;
 	m_readpos = 1;
-	MACHINE_RESET_CALL_MEMBER(megadriv);
+	md_base_state::machine_reset();
 }
 
 void mplay_state::megaplay(machine_config &config)
@@ -1014,18 +1007,18 @@ didn't have original Sega part numbers it's probably a converted TWC cart
 ** Probably reused cart case
 */
 
-/* -- */ GAME( 1993, megaplay, 0,        megaplay, megaplay, mplay_state, init_megaplay, ROT0, "Sega", "Mega Play BIOS",                      MACHINE_IS_BIOS_ROOT | MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 01 */ GAME( 1993, mp_sonic, megaplay, megaplay, mp_sonic, mplay_state, init_megaplay, ROT0, "Sega", "Sonic The Hedgehog (Mega Play)",      MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 02 */ GAME( 1993, mp_gaxe2, megaplay, megaplay, mp_gaxe2, mplay_state, init_megaplay, ROT0, "Sega", "Golden Axe II (Mega Play) (Rev B)",   MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 02 */ GAME( 1993, mp_gaxe2a,mp_gaxe2, megaplay, mp_gaxe2, mplay_state, init_megaplay, ROT0, "Sega", "Golden Axe II (Mega Play)",           MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 03 */ GAME( 1993, mp_gslam, megaplay, megaplay, mp_gslam, mplay_state, init_megaplay, ROT0, "Sega", "Grand Slam (Mega Play)",              MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 04 */ GAME( 1993, mp_twcup, megaplay, megaplay, mp_twc,   mplay_state, init_megaplay, ROT0, "Sega", "Tecmo World Cup (Mega Play)",         MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 05 */ GAME( 1993, mp_sor2,  megaplay, megaplay, mp_sor2,  mplay_state, init_megaplay, ROT0, "Sega", "Streets of Rage II (Mega Play)",      MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 06 */ GAME( 1993, mp_bio,   megaplay, megaplay, mp_bio,   mplay_state, init_megaplay, ROT0, "Sega", "Bio-hazard Battle (Mega Play)",       MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 07 */ GAME( 1993, mp_soni2, megaplay, megaplay, mp_soni2, mplay_state, init_megaplay, ROT0, "Sega", "Sonic The Hedgehog 2 (Mega Play)",    MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
+/* -- */ GAME( 1993, megaplay, 0,        megaplay, megaplay, mplay_state, init_megaplay, ROT0, "Sega", "Mega Play BIOS",                      MACHINE_IS_BIOS_ROOT | MACHINE_IMPERFECT_GRAPHICS )
+/* 01 */ GAME( 1993, mp_sonic, megaplay, megaplay, mp_sonic, mplay_state, init_megaplay, ROT0, "Sega", "Sonic The Hedgehog (Mega Play)",      MACHINE_IMPERFECT_GRAPHICS )
+/* 02 */ GAME( 1993, mp_gaxe2, megaplay, megaplay, mp_gaxe2, mplay_state, init_megaplay, ROT0, "Sega", "Golden Axe II (Mega Play) (Rev B)",   MACHINE_IMPERFECT_GRAPHICS )
+/* 02 */ GAME( 1993, mp_gaxe2a,mp_gaxe2, megaplay, mp_gaxe2, mplay_state, init_megaplay, ROT0, "Sega", "Golden Axe II (Mega Play)",           MACHINE_IMPERFECT_GRAPHICS )
+/* 03 */ GAME( 1993, mp_gslam, megaplay, megaplay, mp_gslam, mplay_state, init_megaplay, ROT0, "Sega", "Grand Slam (Mega Play)",              MACHINE_IMPERFECT_GRAPHICS )
+/* 04 */ GAME( 1993, mp_twcup, megaplay, megaplay, mp_twc,   mplay_state, init_megaplay, ROT0, "Sega", "Tecmo World Cup (Mega Play)",         MACHINE_IMPERFECT_GRAPHICS )
+/* 05 */ GAME( 1993, mp_sor2,  megaplay, megaplay, mp_sor2,  mplay_state, init_megaplay, ROT0, "Sega", "Streets of Rage II (Mega Play)",      MACHINE_IMPERFECT_GRAPHICS )
+/* 06 */ GAME( 1993, mp_bio,   megaplay, megaplay, mp_bio,   mplay_state, init_megaplay, ROT0, "Sega", "Bio-hazard Battle (Mega Play)",       MACHINE_IMPERFECT_GRAPHICS )
+/* 07 */ GAME( 1993, mp_soni2, megaplay, megaplay, mp_soni2, mplay_state, init_megaplay, ROT0, "Sega", "Sonic The Hedgehog 2 (Mega Play)",    MACHINE_IMPERFECT_GRAPHICS )
 /* 08 - Columns 3? see below */
 /* 09 */ GAME( 1993, mp_shnb3, megaplay, megaplay, mp_shnb3, mplay_state, init_megaplay, ROT0, "Sega", "Shinobi III (Mega Play)",             MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 10 */ GAME( 1993, mp_gunhe, megaplay, megaplay, mp_gunhe, mplay_state, init_megaplay, ROT0, "Sega", "Gunstar Heroes (Mega Play)",          MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
-/* 11 */ GAME( 1993, mp_mazin, megaplay, megaplay, mp_mazin, mplay_state, init_megaplay, ROT0, "Sega", "Mazin Wars / Mazin Saga (Mega Play)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
+/* 10 */ GAME( 1993, mp_gunhe, megaplay, megaplay, mp_gunhe, mplay_state, init_megaplay, ROT0, "Sega", "Gunstar Heroes (Mega Play)",          MACHINE_IMPERFECT_GRAPHICS )
+/* 11 */ GAME( 1993, mp_mazin, megaplay, megaplay, mp_mazin, mplay_state, init_megaplay, ROT0, "Sega", "Mazin Wars / Mazin Saga (Mega Play)", MACHINE_IMPERFECT_GRAPHICS )
 
-/* ?? */ GAME( 1993, mp_col3,  megaplay, megaplay, mp_col3,  mplay_state, init_megaplay, ROT0, "Sega", "Columns III (Mega Play)",             MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS )
+/* ?? */ GAME( 1993, mp_col3,  megaplay, megaplay, mp_col3,  mplay_state, init_megaplay, ROT0, "Sega", "Columns III (Mega Play)",             MACHINE_IMPERFECT_GRAPHICS )

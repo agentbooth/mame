@@ -30,8 +30,8 @@ Octo (listed differences):
   as 15MHz on the box, but measured ~12MHz (older Octo version is probably ~6MHz?)
 - speaker circuit is a bit different, not sure why
 
-Note that even though the MCUs are different, internal ROM contents is
-identical for Micro II/III, Presto, Octo.
+Note that even though the MCUs are different, internal ROM contents was confirmed
+to be identical for Micro II/III, Presto, Octo.
 
 TODO:
 - controls are too sensitive, is there a bug in the CPU core timer emulation?
@@ -45,7 +45,6 @@ TODO:
 #include "cpu/mcs48/mcs48.h"
 #include "machine/sensorboard.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "video/pwm.h"
 
 #include "speaker.h"
@@ -211,7 +210,6 @@ void micro2_state::micro2(machine_config &config)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_1BIT(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	VOLTAGE_REGULATOR(config, "vref").add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 }
 
 

@@ -28,6 +28,7 @@ naomi.h -> NAOMI includes
 #include "machine/jvs13551.h"
 #include "machine/m3comm.h"
 #include "machine/gunsense.h"
+#include "machine/segashiobd.h"
 #include "dc.h"
 
 enum {
@@ -44,7 +45,7 @@ class naomi_state : public dc_state
 		naomi_state(const machine_config &mconfig, device_type type, const char *tag)
 		: dc_state(mconfig, type, tag),
 		m_eeprom(*this, "main_eeprom"),
-		m_rombase(*this, "rombase"),
+		m_rombase(*this, "maincpu"),
 		m_mp(*this, "KEY%u", 1U)
 		{ }
 
@@ -54,6 +55,7 @@ class naomi_state : public dc_state
 	void naomim2_gun(machine_config &config);
 	void naomi(machine_config &config);
 	void naomim1(machine_config &config);
+	void naomim1_hop(machine_config &config);
 	void naomigd(machine_config &config);
 	void naomigd_kb(machine_config &config);
 	void naomim4(machine_config &config);
@@ -77,7 +79,7 @@ class naomi_state : public dc_state
 
 protected:
 	required_device<eeprom_serial_93cxx_device> m_eeprom;
-	optional_shared_ptr<uint64_t> m_rombase;
+	optional_region_ptr<uint64_t> m_rombase;
 	optional_ioport_array<5> m_mp;
 
 	DECLARE_MACHINE_RESET(naomi);
@@ -120,6 +122,7 @@ public:
 	void naomi2m2(machine_config &config);
 	void naomi2gd(machine_config &config);
 	void naomi2m1(machine_config &config);
+	void naomi2m4(machine_config &config);
 
 	void init_naomi2();
 

@@ -72,11 +72,13 @@ class nes_state : public nes_base_state
 public:
 	nes_state(const machine_config &mconfig, device_type type, const char *tag) :
 		nes_base_state(mconfig, type, tag),
+		m_mainram(*this, "mainram"),
 		m_ppu(*this, "ppu"),
 		m_screen(*this, "screen"),
 		m_exp(*this, "exp"),
 		m_cartslot(*this, "nes_slot"),
-		m_disk(*this, "disk")
+		m_disk(*this, "disk"),
+		m_prg_bank(*this, "prg%u", 0U)
 	{ }
 
 
@@ -124,12 +126,14 @@ private:
 	uint8_t      *m_vram;
 	std::unique_ptr<uint8_t[]>    m_ciram; //PPU nametable RAM - external to PPU!
 
+	required_shared_ptr<uint8_t> m_mainram;
 
 	required_device<ppu2c0x_device> m_ppu;
 	required_device<screen_device> m_screen;
 	optional_device<nes_control_port_device> m_exp;
 	optional_device<nes_cart_slot_device> m_cartslot;
 	optional_device<nes_disksys_device> m_disk;
+	memory_bank_array_creator<4> m_prg_bank;
 };
 
 #endif // MAME_INCLUDES_NES_H

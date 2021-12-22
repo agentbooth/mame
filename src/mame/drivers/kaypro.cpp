@@ -46,6 +46,7 @@
 #include "emu.h"
 #include "includes/kaypro.h"
 #include "machine/kay_kbd.h"
+#include "formats/kaypro_dsk.h"
 
 #include "bus/rs232/rs232.h"
 #include "machine/clock.h"
@@ -66,8 +67,8 @@ u8 kaypro_state::kaypro484_87_r() { return 0x7f; }    /* to bypass unemulated HD
 
 void kaypro_state::kaypro_map(address_map &map)
 {
-	map(0x0000, 0x2fff).bankr("bankr").bankw("bankw");
-	map(0x3000, 0x3fff).bankrw("bank3");
+	map(0x0000, 0x2fff).bankr(m_bankr).bankw(m_bankw);
+	map(0x3000, 0x3fff).bankrw(m_bank3);
 	map(0x4000, 0xffff).ram();
 }
 
@@ -194,6 +195,12 @@ static void kaypro_floppies(device_slot_interface &device)
 	device.option_add("525qd", FLOPPY_525_QD);
 }
 
+void kaypro_state::floppy_formats(format_registration &fr)
+{
+	fr.add_mfm_containers();
+	fr.add(FLOPPY_KAYPROII_FORMAT);
+	fr.add(FLOPPY_KAYPRO2X_FORMAT);
+}
 
 void kaypro_state::kayproii(machine_config &config)
 {
@@ -265,9 +272,9 @@ void kaypro_state::kayproii(machine_config &config)
 	m_fdc->intrq_wr_callback().set(FUNC(kaypro_state::fdc_intrq_w));
 	m_fdc->drq_wr_callback().set(FUNC(kaypro_state::fdc_drq_w));
 	m_fdc->set_force_ready(true);
-	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525ssdd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525ssdd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	SOFTWARE_LIST(config, "flop_list").set_original("kayproii");
+	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525ssdd", kaypro_state::floppy_formats).enable_sound(true);
+	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525ssdd", kaypro_state::floppy_formats).enable_sound(true);
+	SOFTWARE_LIST(config, "flop_list").set_original("kaypro").set_filter("A");
 }
 
 void kaypro_state::kayproiv(machine_config &config)
@@ -276,9 +283,9 @@ void kaypro_state::kayproiv(machine_config &config)
 	m_pio_s->out_pa_callback().set(FUNC(kaypro_state::kayproiv_pio_system_w));
 	config.device_remove("fdc:0");
 	config.device_remove("fdc:1");
-	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525dd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525dd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro483");
+	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525dd", kaypro_state::floppy_formats).enable_sound(true);
+	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525dd", kaypro_state::floppy_formats).enable_sound(true);
+	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro").set_filter("D");
 }
 
 void kaypro_state::omni2(machine_config &config)
@@ -365,9 +372,21 @@ void kaypro_state::kaypro484(machine_config &config)
 	m_fdc->intrq_wr_callback().set(FUNC(kaypro_state::fdc_intrq_w));
 	m_fdc->drq_wr_callback().set(FUNC(kaypro_state::fdc_drq_w));
 	m_fdc->set_force_ready(true);
-	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525dd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525dd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	SOFTWARE_LIST(config, "flop_list").set_original("kaypro484");
+	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525dd", kaypro_state::floppy_formats).enable_sound(true);
+	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525dd", kaypro_state::floppy_formats).enable_sound(true);
+	SOFTWARE_LIST(config, "flop_list").set_original("kaypro").set_filter("C");
+}
+
+void kaypro_state::kaypro4x(machine_config &config)
+{
+	kaypro484(config);
+	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro").set_filter("F");
+}
+
+void kaypro_state::kaypro1(machine_config &config)
+{
+	kaypro484(config);
+	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro").set_filter("G");
 }
 
 void kaypro_state::kaypro10(machine_config &config)
@@ -375,14 +394,14 @@ void kaypro_state::kaypro10(machine_config &config)
 	kaypro484(config);
 	config.device_remove("fdc:1");  // only has 1 floppy drive
 	// need to add hard drive & controller
-	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro10");
+	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro").set_filter("E");
 }
 
 void kaypro_state::kaypronew2(machine_config &config)
 {
 	kaypro484(config);
 	config.device_remove("fdc:1");  // only has 1 floppy drive
-	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypronew2");
+	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro").set_filter("G");
 }
 
 void kaypro_state::kaypro284(machine_config &config)
@@ -390,9 +409,9 @@ void kaypro_state::kaypro284(machine_config &config)
 	kaypro484(config);
 	config.device_remove("fdc:0");
 	config.device_remove("fdc:1");
-	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525ssdd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525ssdd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro284");
+	FLOPPY_CONNECTOR(config, "fdc:0", kaypro_floppies, "525ssdd", kaypro_state::floppy_formats).enable_sound(true);
+	FLOPPY_CONNECTOR(config, "fdc:1", kaypro_floppies, "525ssdd", kaypro_state::floppy_formats).enable_sound(true);
+	SOFTWARE_LIST(config.replace(), "flop_list").set_original("kaypro").set_filter("B");
 }
 
 void kaypro_state::init_kaypro()
@@ -663,10 +682,10 @@ COMP( 1984, kaypro484,    0,         0,      kaypro484,  kaypro, kaypro_state, i
 COMP( 1984, kaypro284,    kaypro484, 0,      kaypro284,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 2/84", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE ) // model 81-015
 COMP( 1984, kaypro484p88, kaypro484, 0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 4/84 plus88", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE ) // model 81-015 with an added 8088 daughterboard and rom
 COMP( 1984, kaypro1084,   kaypro10,  0,      kaypro10,   kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 10", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE ) // model 81-005
-COMP( 1984, robie,        0,         0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro Robie", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-COMP( 1985, kaypro2x,     kaypro484, 0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 2x", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE ) // model 81-025
+COMP( 1984, robie,        0,         0,      kaypro4x,   kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro Robie", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 1985, kaypro2x,     kaypro484, 0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 2x", MACHINE_SUPPORTS_SAVE ) // model 81-025
 COMP( 1985, kaypronew2,   0,         0,      kaypronew2, kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro New 2", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-COMP( 1985, kaypro4x,     robie,     0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 4x", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-COMP( 1986, kaypro1,      kaypro484, 0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 1", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-COMP( 198?, omni2,        kayproii,  0,      omni2,      kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Omni II Logic Analyzer", MACHINE_SUPPORTS_SAVE )
-COMP( 198?, omni4,        kaypro484, 0,      kaypro484,  kaypro, kaypro_state, init_kaypro, "Omni Logic Inc.",    "Omni 4 Logic Analyzer", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 1985, kaypro4x,     robie,     0,      kaypro4x,   kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 4x", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 1986, kaypro1,      kaypro484, 0,      kaypro1,    kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Kaypro 1", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 198?, omni2,        kayproii,  0,      omni2,      kaypro, kaypro_state, init_kaypro, "Non Linear Systems", "Omni II Logic Analyzer", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 198?, omni4,        kaypro484, 0,      kaypro1,    kaypro, kaypro_state, init_kaypro, "Omni Logic Inc.",    "Omni 4 Logic Analyzer", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )

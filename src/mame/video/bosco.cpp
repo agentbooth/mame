@@ -116,7 +116,7 @@ TILE_GET_INFO_MEMBER(bosco_state::fg_get_tile_info )
 
 ***************************************************************************/
 
-VIDEO_START_MEMBER(bosco_state,bosco)
+void bosco_state::video_start()
 {
 	m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bosco_state::bg_get_tile_info)), TILEMAP_SCAN_ROWS, 8,8, 32,32);
 	m_fg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bosco_state::fg_get_tile_info)), tilemap_mapper_delegate(*this, FUNC(bosco_state::fg_tilemap_scan)), 8,8, 8,32);
@@ -124,10 +124,10 @@ VIDEO_START_MEMBER(bosco_state,bosco)
 	m_bg_tilemap->configure_groups(*m_gfxdecode->gfx(0), 0x1f);
 	m_fg_tilemap->configure_groups(*m_gfxdecode->gfx(0), 0x1f);
 
-	m_spriteram = m_videoram + 0x03d4;
+	m_spriteram = &m_videoram[0x03d4];
 	m_spriteram_size = 0x0c;
 	m_spriteram2 = m_spriteram + 0x0800;
-	m_bosco_radarx = m_videoram + 0x03f0;
+	m_bosco_radarx = &m_videoram[0x03f0];
 	m_bosco_radary = m_bosco_radarx + 0x0800;
 
 	m_bosco_starclr = 1;

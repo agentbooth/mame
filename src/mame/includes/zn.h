@@ -27,10 +27,10 @@
 #include "machine/vt83c461.h"
 #include "machine/watchdog.h"
 #include "machine/znmcu.h"
-#include "sound/2610intf.h"
 #include "sound/okim6295.h"
 #include "sound/qsound.h"
 #include "sound/spu.h"
+#include "sound/ymopn.h"
 #include "sound/ymf271.h"
 #include "sound/ymz280b.h"
 #include "video/psx.h"
@@ -51,6 +51,7 @@ public:
 		m_cat702(*this, "cat702_%u", 1),
 		m_znmcu(*this, "znmcu"),
 		m_maincpu(*this, "maincpu"),
+		m_spu(*this, "spu"),
 		m_ram(*this, "maincpu:ram"),
 		m_znmcu_dataout(1)
 	{
@@ -77,8 +78,9 @@ protected:
 
 	virtual void machine_start() override;
 
-	inline void ATTR_PRINTF(3,4) verboselog( int n_level, const char *s_fmt, ... );
-	inline void psxwriteword( uint32_t *p_n_psxram, uint32_t n_address, uint16_t n_data );
+	void ATTR_PRINTF(3,4) verboselog( int n_level, const char *s_fmt, ... );
+	static uint16_t psxreadword( uint32_t *p_n_psxram, uint32_t n_address );
+	static void psxwriteword( uint32_t *p_n_psxram, uint32_t n_address, uint16_t n_data );
 
 	uint8_t m_n_znsecsel;
 
@@ -88,6 +90,7 @@ protected:
 	required_device_array<cat702_device, 2> m_cat702;
 	required_device<znmcu_device> m_znmcu;
 	required_device<cpu_device> m_maincpu;
+	required_device<spu_device> m_spu;
 	required_device<ram_device> m_ram;
 
 	int m_cat702_dataout[2];

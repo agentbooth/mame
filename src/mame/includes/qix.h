@@ -49,7 +49,7 @@ public:
 		m_sn2(*this, "sn2"),
 		m_discrete(*this, "discrete"),
 		m_paletteram(*this, "paletteram"),
-		m_videoram(*this, "videoram"),
+		m_videoram(*this, "videoram", 0x10000, ENDIANNESS_BIG),
 		m_videoram_address(*this, "videoram_addr"),
 		m_videoram_mask(*this, "videoram_mask"),
 		m_scanline_latch(*this, "scanline_latch"),
@@ -90,7 +90,7 @@ protected:
 
 	/* video state */
 	required_shared_ptr<uint8_t> m_paletteram;
-	optional_shared_ptr<uint8_t> m_videoram;
+	memory_share_creator<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_videoram_address;
 	optional_shared_ptr<uint8_t> m_videoram_mask;
 	required_shared_ptr<uint8_t> m_scanline_latch;
@@ -101,6 +101,8 @@ protected:
 	optional_memory_bank m_bank0;
 	optional_memory_bank m_bank1;
 	required_device<screen_device> m_screen;
+	std::unique_ptr<uint8_t[]> m_decrypted;
+	std::unique_ptr<uint8_t[]> m_decrypted2;
 
 	pen_t m_pens[0x400];
 	void qix_data_firq_w(uint8_t data);

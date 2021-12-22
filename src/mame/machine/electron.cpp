@@ -1,11 +1,8 @@
 // license:BSD-3-Clause
 // copyright-holders:Wilbert Pol, Nigel Barnes
 /******************************************************************************
+
     Acorn Electron driver
-
-    MESS Driver By:
-
-    Wilbert Pol
 
 ******************************************************************************/
 
@@ -541,7 +538,7 @@ void electron_state::electron_sheila_w(offs_t offset, uint8_t data)
 		m_ula.cassette_motor_mode = ( data >> 6 ) & 0x01;
 		m_cassette->change_state(m_ula.cassette_motor_mode ? CASSETTE_MOTOR_ENABLED : CASSETTE_MOTOR_DISABLED, CASSETTE_MOTOR_DISABLED );
 		m_ula.capslock_mode = ( data >> 7 ) & 0x01;
-		output().set_value("capslock_led", m_ula.capslock_mode);
+		m_capslock_led = m_ula.capslock_mode;
 		break;
 	case 0x08: case 0x0a: case 0x0c: case 0x0e:
 		/* colour palette */
@@ -594,6 +591,8 @@ TIMER_CALLBACK_MEMBER(electron_state::setup_beep)
 
 void electron_state::machine_start()
 {
+	m_capslock_led.resolve();
+
 	m_ula.interrupt_status = 0x82;
 	m_ula.interrupt_control = 0x00;
 	timer_set(attotime::zero, TIMER_SETUP_BEEP);
@@ -652,7 +651,7 @@ image_init_result electronsp_state::load_rom(device_image_interface &image, gene
 	// socket accepts 8K and 16K ROM only
 	if (size != 0x2000 && size != 0x4000)
 	{
-		image.seterror(IMAGE_ERROR_UNSPECIFIED, "Invalid size: Only 8K/16K is supported");
+		image.seterror(image_error::INVALIDIMAGE, "Invalid size: Only 8K/16K is supported");
 		return image_init_result::FAIL;
 	}
 

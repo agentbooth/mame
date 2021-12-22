@@ -164,7 +164,6 @@
 #include "imagedev/floppy.h"
 #include "machine/wd_fdc.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "video/mc6845.h"
 #include "machine/ram.h"
 #include "emupal.h"
@@ -215,7 +214,7 @@ private:
 	void port84_w(u8 data); // dac port 48k
 	void machine_start() override;
 	void machine_reset() override;
-	DECLARE_FLOPPY_FORMATS(camplynx_floppy_formats);
+	static void camplynx_floppy_formats(format_registration &fr);
 	MC6845_UPDATE_ROW(lynx48k_update_row);
 	MC6845_UPDATE_ROW(lynx128k_update_row);
 	void lynx128k_io(address_map &map);
@@ -705,7 +704,7 @@ void camplynx_state::port80_w(u8 data)
 /* DAC port (6-bit). If writing cassette, output goes to tape as a sine wave, otherwise it goes to speaker.
    There is code below to write as a sine wave or a square wave, both work and can be loaded successfully.
    However the PALE emulator cannot load either of them, although it loads its own output.
-   MESS can load PALE's wav files though.
+   MAME can load PALE's wav files though.
    Currently square wave output is selected. */
 
 void camplynx_state::port84_w(u8 data)
@@ -846,9 +845,11 @@ void camplynx_state::machine_start()
 	save_item(NAME(m_is_128k));
 }
 
-FLOPPY_FORMATS_MEMBER( camplynx_state::camplynx_floppy_formats )
-	FLOPPY_CAMPLYNX_FORMAT
-FLOPPY_FORMATS_END
+void camplynx_state::camplynx_floppy_formats(format_registration &fr)
+{
+	fr.add_mfm_containers();
+	fr.add(FLOPPY_CAMPLYNX_FORMAT);
+}
 
 static void camplynx_floppies(device_slot_interface &device)
 {
@@ -862,7 +863,6 @@ void camplynx_state::lynx_common(machine_config &config)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_6BIT_R2R(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.375); // unknown DAC
-	VOLTAGE_REGULATOR(config, "vref").add_route(0, m_dac, 1.0, DAC_VREF_POS_INPUT).add_route(0, m_dac, -1.0, DAC_VREF_NEG_INPUT);
 }
 
 void camplynx_state::lynx_disk(machine_config &config)

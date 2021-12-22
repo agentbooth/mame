@@ -200,8 +200,8 @@ constexpr unsigned LP_XOFFSET = 5;  // x-offset of LP (due to delay in hit recog
 class hp9845_state : public driver_device
 {
 public:
-	hp9845_state(const machine_config &mconfig, device_type type, const char *tag) :
-		driver_device(mconfig, type, tag)
+	hp9845_state(const machine_config &mconfig, device_type type, const char *tag)
+		: driver_device(mconfig, type, tag)
 	{ }
 
 	void hp9845a(machine_config &config);
@@ -428,6 +428,9 @@ hp9845_base_state::hp9845_base_state(const machine_config &mconfig, device_type 
 	m_io_slot(*this, "slot%u", 0U),
 	m_ram(*this, RAM_TAG),
 	m_softkeys(*this, "Softkey%u", 0U),
+	m_shift_lock_led(*this, "shift_lock_led"),
+	m_prt_all_led(*this, "prt_all_led"),
+	m_auto_st_led(*this, "auto_st_led"),
 	m_chargen(*this, "chargen")
 {
 }
@@ -442,7 +445,14 @@ void hp9845_base_state::setup_ram_block(unsigned block , unsigned offset)
 void hp9845_base_state::machine_start()
 {
 	m_softkeys.resolve();
+	m_shift_lock_led.resolve();
+	m_prt_all_led.resolve();
+	m_auto_st_led.resolve();
+
 	m_screen->register_screen_bitmap(m_bitmap);
+
+	m_t15->set_name("T15");
+	m_t14->set_name("T14");
 
 	// setup RAM dynamically for -ramsize
 	// 0K..64K
@@ -540,7 +550,7 @@ attotime hp9845_base_state::time_to_gv_mem_availability() const
 void hp9845_base_state::kb_scan_ioport(ioport_value pressed , ioport_port &port , unsigned idx_base , int& max_seq_len , unsigned& max_seq_idx)
 {
 	while (pressed) {
-		unsigned bit_no = 31 - count_leading_zeros(pressed);
+		unsigned bit_no = 31 - count_leading_zeros_32(pressed);
 		ioport_value mask = BIT_MASK(bit_no);
 		int seq_len = port.field(mask)->seq().length();
 		if (seq_len > max_seq_len) {
@@ -719,21 +729,21 @@ INPUT_CHANGED_MEMBER(hp9845_base_state::togglekey_changed)
 		{
 			bool state = m_io_shiftlock->read();
 			popmessage("SHIFT LOCK %s", state ? "ON" : "OFF");
-			output().set_value("shift_lock_led" , state);
+			m_shift_lock_led = state;
 		}
 		break;
 	case 1: // Prt all
 		{
 			bool state = BIT(m_io_key[0]->read(), 1);
 			popmessage("PRT ALL %s", state ? "ON" : "OFF");
-			output().set_value("prt_all_led" , state);
+			m_prt_all_led = state;
 		}
 		break;
 	case 2: // Auto st
 		{
 			bool state = BIT(m_io_key[0]->read(), 17);
 			popmessage("AUTO ST %s", state ? "ON" : "OFF");
-			output().set_value("auto_st_led" , state);
+			m_auto_st_led = state;
 		}
 		break;
 	}
@@ -2086,7 +2096,7 @@ uint16_t hp9845c_state::graphic_r(offs_t offset)
 	case 2:
 		// R6: data register with DMA TC
 		m_gv_dma_en = false;
-		// Intentional fall-through
+		[[fallthrough]];
 
 	case 0:
 		// R4: data register
@@ -2778,7 +2788,7 @@ uint16_t hp9845t_state::graphic_r(offs_t offset)
 	case 2:
 		// R6: data register with DMA TC
 		m_gv_dma_en = false;
-		// Intentional fall-through
+		[[fallthrough]];
 
 	case 0:
 		// R4: data register
@@ -3631,11 +3641,14 @@ void hp9845_base_state::ppu_io_map(address_map &map)
 void hp9845_base_state::hp9845_base(machine_config &config)
 {
 	HP_5061_3001(config , m_lpu , 5700000);
+	// Clock scaling takes into account the slowdown caused by DRAM refresh
+	m_lpu->set_clock_scale(0.93);
 	m_lpu->set_addrmap(AS_PROGRAM , &hp9845_base_state::global_mem_map);
 	m_lpu->set_9845_boot_mode(true);
 	m_lpu->set_rw_cycles(6 , 6);
 	m_lpu->set_relative_mode(true);
 	HP_5061_3001(config , m_ppu , 5700000);
+	m_ppu->set_clock_scale(0.93);
 	m_ppu->set_addrmap(AS_PROGRAM , &hp9845_base_state::global_mem_map);
 	m_ppu->set_addrmap(AS_IO , &hp9845_base_state::ppu_io_map);
 	m_ppu->set_9845_boot_mode(true);

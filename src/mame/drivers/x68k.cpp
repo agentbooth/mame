@@ -936,6 +936,11 @@ void x68k_state::set_bus_error(uint32_t address, bool rw, uint16_t mem_mask)
 {
 	if(m_bus_error)
 		return;
+	else if(!m_maincpu->executing())
+	{
+		m_hd63450->bec_w(0, hd63450_device::ERR_BUS);
+		return;
+	}
 	if(!ACCESSING_BITS_8_15)
 		address++;
 	m_bus_error = true;
@@ -1501,13 +1506,6 @@ void x68k_state::machine_reset()
 	//m_mfpdev->i7_w(1); // h-sync
 
 	// reset output values
-	output().set_value("key_led_kana",1);
-	output().set_value("key_led_romaji",1);
-	output().set_value("key_led_code",1);
-	output().set_value("key_led_caps",1);
-	output().set_value("key_led_insert",1);
-	output().set_value("key_led_hiragana",1);
-	output().set_value("key_led_fullsize",1);
 	std::fill(std::begin(m_eject_drv_out), std::end(m_eject_drv_out), 1);
 	std::fill(std::begin(m_ctrl_drv_out), std::end(m_ctrl_drv_out), 1);
 	std::fill(std::begin(m_access_drv_out), std::end(m_access_drv_out), 1);
@@ -1527,8 +1525,7 @@ void x68k_state::machine_start()
 	address_space &space = m_maincpu->space(AS_PROGRAM);
 	// install RAM handlers
 	m_spriteram = (uint16_t*)(memregion("user1")->base());
-	space.install_readwrite_bank(0x000000,m_ram->size()-1,"bank1");
-	membank("bank1")->set_base(m_ram->pointer());
+	space.install_ram(0x000000,m_ram->size()-1,m_ram->pointer());
 
 	// start mouse timer
 	m_mouse_timer->adjust(attotime::zero, 0, attotime::from_msec(1));  // a guess for now
@@ -1558,6 +1555,12 @@ void x68k_state::machine_start()
 	m_ioc.irqstatus = 0;
 	m_mouse.irqactive = false;
 	m_current_ipl = 0;
+	m_adpcm.rate = 0;
+	m_adpcm.clock = 0;
+	m_sysport.sram_writeprotect = 0;
+	m_sysport.monitor = 0;
+	m_bus_error = false;
+	m_led_state = 0;
 }
 
 void x68k_state::driver_init()
@@ -1608,10 +1611,12 @@ void x68030_state::driver_init()
 	m_is_32bit = true;
 }
 
-FLOPPY_FORMATS_MEMBER( x68k_state::floppy_formats )
-	FLOPPY_XDF_FORMAT,
-	FLOPPY_DIM_FORMAT
-FLOPPY_FORMATS_END
+void x68k_state::floppy_formats(format_registration &fr)
+{
+	fr.add_mfm_containers();
+	fr.add(FLOPPY_XDF_FORMAT);
+	fr.add(FLOPPY_DIM_FORMAT);
+}
 
 static void x68k_floppies(device_slot_interface &device)
 {
@@ -1646,7 +1651,7 @@ void x68k_state::x68000_base(machine_config &config)
 
 	HD63450(config, m_hd63450, 40_MHz_XTAL / 4, "maincpu");
 	m_hd63450->set_clocks(attotime::from_usec(2), attotime::from_nsec(450), attotime::from_usec(4), attotime::from_hz(15625/2));
-	m_hd63450->set_burst_clocks(attotime::from_usec(2), attotime::from_nsec(450), attotime::from_nsec(50), attotime::from_nsec(50));
+	m_hd63450->set_burst_clocks(attotime::from_usec(2), attotime::from_nsec(450), attotime::from_nsec(450), attotime::from_nsec(50));
 	m_hd63450->irq_callback().set(FUNC(x68k_state::dma_irq));
 	m_hd63450->dma_end().set(FUNC(x68k_state::dma_end));
 	m_hd63450->dma_read<0>().set("upd72065", FUNC(upd72065_device::dma_r));

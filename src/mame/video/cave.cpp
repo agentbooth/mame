@@ -237,7 +237,7 @@ void cave_state::get_sprite_info_cave(int chip)
 	const int max_x = m_screen[chip]->width();
 	const int max_y = m_screen[chip]->height();
 
-	const u16 *source = m_spriteram[chip] + (0x4000 / 2) * m_spriteram_bank[chip];
+	const u16 *source = &m_spriteram[chip][(0x4000 / 2) * m_spriteram_bank[chip]];
 	const u16 *finish = source + (0x4000 / 2);
 	u32 clk = 0; // used clock cycle for sprites
 
@@ -250,7 +250,7 @@ void cave_state::get_sprite_info_cave(int chip)
 		int x, y;
 		int total_width_f, total_height_f;
 
-		if ((m_videoregs[chip][5] & 0x3000) == 0)    // if bit 12/13 is 0 (or seperated per X and Y?)
+		if ((m_videoregs[chip][5] & 0x3000) == 0)    // if bit 12/13 is 0 (or separated per X and Y?)
 		{
 			x = (source[0] & 0x3ff) << 8;
 			y = (source[1] & 0x3ff) << 8;
@@ -367,7 +367,7 @@ void cave_state::get_sprite_info_donpachi(int chip)
 	const int max_x = m_screen[chip]->width();
 	const int max_y = m_screen[chip]->height();
 
-	const u16 *source = m_spriteram[chip] + (0x4000 / 2) * m_spriteram_bank[chip];
+	const u16 *source = &m_spriteram[chip][(0x4000 / 2) * m_spriteram_bank[chip]];
 	const u16 *finish = source + (0x4000 / 2);
 	u32 clk = 0; // used clock cycle for sprites
 

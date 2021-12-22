@@ -139,25 +139,25 @@ void midyunit_state::term2_sound_w(offs_t offset, uint16_t data)
 	/* Flash Lamp Output Data */
 	if  ( ((data & 0x800) != 0x800) && ((data & 0x400) == 0x400 ) )
 	{
-	output().set_value("Left_Flash_1", data & 0x1);
-	output().set_value("Left_Flash_2", (data & 0x2) >> 1);
-	output().set_value("Left_Flash_3", (data & 0x4) >> 2);
-	output().set_value("Left_Flash_4", (data & 0x8) >> 3);
-	output().set_value("Right_Flash_1", (data & 0x10) >> 4);
-	output().set_value("Right_Flash_2", (data & 0x20) >> 5);
-	output().set_value("Right_Flash_3", (data & 0x40) >> 6);
-	output().set_value("Right_Flash_4", (data & 0x80) >> 7);
+		output().set_value("Left_Flash_1", data & 0x1);
+		output().set_value("Left_Flash_2", (data & 0x2) >> 1);
+		output().set_value("Left_Flash_3", (data & 0x4) >> 2);
+		output().set_value("Left_Flash_4", (data & 0x8) >> 3);
+		output().set_value("Right_Flash_1", (data & 0x10) >> 4);
+		output().set_value("Right_Flash_2", (data & 0x20) >> 5);
+		output().set_value("Right_Flash_3", (data & 0x40) >> 6);
+		output().set_value("Right_Flash_4", (data & 0x80) >> 7);
 	}
 
 	/* Gun Output Data */
 	if  ( ((data & 0x800) == 0x800) && ((data & 0x400) != 0x400 ) )
 	{
-	output().set_value("Left_Gun_Recoil", data & 0x1);
-	output().set_value("Right_Gun_Recoil", (data & 0x2) >> 1);
-	output().set_value("Left_Gun_Green_Led", (~data & 0x20) >> 5);
-	output().set_value("Left_Gun_Red_Led", (~data & 0x10) >> 4);
-	output().set_value("Right_Gun_Green_Led", (~data & 0x80) >> 7);
-	output().set_value("Right_Gun_Red_Led", (~data & 0x40) >> 6);
+		output().set_value("Left_Gun_Recoil", data & 0x1);
+		output().set_value("Right_Gun_Recoil", (data & 0x2) >> 1);
+		output().set_value("Left_Gun_Green_Led", (~data & 0x20) >> 5);
+		output().set_value("Left_Gun_Red_Led", (~data & 0x10) >> 4);
+		output().set_value("Right_Gun_Green_Led", (~data & 0x80) >> 7);
+		output().set_value("Right_Gun_Red_Led", (~data & 0x40) >> 6);
 	}
 
 	if (offset == 0)
@@ -292,15 +292,21 @@ void midyunit_state::init_generic(int bpp, int sound, int prot_start, int prot_e
 			break;
 
 		case SOUND_CVSD:
-			m_cvsd_sound->get_cpu()->space(AS_PROGRAM).install_ram(prot_start, prot_end);
+			m_hidden_ram = std::make_unique<uint8_t[]>(prot_end - prot_start);
+			save_pointer(NAME(m_hidden_ram), prot_end - prot_start);
+			m_cvsd_sound->get_cpu()->space(AS_PROGRAM).install_ram(prot_start, prot_end, m_hidden_ram.get());
 			break;
 
 		case SOUND_ADPCM:
-			m_adpcm_sound->get_cpu()->space(AS_PROGRAM).install_ram(prot_start, prot_end);
+			m_hidden_ram = std::make_unique<uint8_t[]>(prot_end - prot_start);
+			save_pointer(NAME(m_hidden_ram), prot_end - prot_start);
+			m_adpcm_sound->get_cpu()->space(AS_PROGRAM).install_ram(prot_start, prot_end, m_hidden_ram.get());
 			break;
 
 		case SOUND_NARC:
-			m_narc_sound->get_cpu()->space(AS_PROGRAM).install_ram(prot_start, prot_end);
+			m_hidden_ram = std::make_unique<uint8_t[]>(prot_end - prot_start);
+			save_pointer(NAME(m_hidden_ram), prot_end - prot_start);
+			m_narc_sound->get_cpu()->space(AS_PROGRAM).install_ram(prot_start, prot_end, m_hidden_ram.get());
 			break;
 
 		case SOUND_YAWDIM:
@@ -363,6 +369,8 @@ void midyunit_state::init_smashtv()
 {
 	/* common init */
 	init_generic(6, SOUND_CVSD_SMALL, 0x9cf6, 0x9d21);
+
+	m_prot_data = nullptr;
 }
 
 

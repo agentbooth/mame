@@ -92,34 +92,34 @@ license:CC0
 	</element>
 
 	<element name="piece" defstate="0">
-		<image file="chess/wp.png" state="1"/>
-		<image file="chess/wn.png" state="2"/>
-		<image file="chess/wb.png" state="3"/>
-		<image file="chess/wr.png" state="4"/>
-		<image file="chess/wq.png" state="5"/>
-		<image file="chess/wk.png" state="6"/>
+		<image file="chess/wp.svg" state="1"/>
+		<image file="chess/wn.svg" state="2"/>
+		<image file="chess/wb.svg" state="3"/>
+		<image file="chess/wr.svg" state="4"/>
+		<image file="chess/wq.svg" state="5"/>
+		<image file="chess/wk.svg" state="6"/>
 
-		<image file="chess/bp.png" state="7"/>
-		<image file="chess/bn.png" state="8"/>
-		<image file="chess/bb.png" state="9"/>
-		<image file="chess/br.png" state="10"/>
-		<image file="chess/bq.png" state="11"/>
-		<image file="chess/bk.png" state="12"/>
+		<image file="chess/bp.svg" state="7"/>
+		<image file="chess/bn.svg" state="8"/>
+		<image file="chess/bb.svg" state="9"/>
+		<image file="chess/br.svg" state="10"/>
+		<image file="chess/bq.svg" state="11"/>
+		<image file="chess/bk.svg" state="12"/>
 
 		<!-- selected pieces -->
-		<image file="chess/wp.png" state="13"><color alpha="0.5" /></image>
-		<image file="chess/wn.png" state="14"><color alpha="0.5" /></image>
-		<image file="chess/wb.png" state="15"><color alpha="0.5" /></image>
-		<image file="chess/wr.png" state="16"><color alpha="0.5" /></image>
-		<image file="chess/wq.png" state="17"><color alpha="0.5" /></image>
-		<image file="chess/wk.png" state="18"><color alpha="0.5" /></image>
+		<image file="chess/wp.svg" state="13"><color alpha="0.5" /></image>
+		<image file="chess/wn.svg" state="14"><color alpha="0.5" /></image>
+		<image file="chess/wb.svg" state="15"><color alpha="0.5" /></image>
+		<image file="chess/wr.svg" state="16"><color alpha="0.5" /></image>
+		<image file="chess/wq.svg" state="17"><color alpha="0.5" /></image>
+		<image file="chess/wk.svg" state="18"><color alpha="0.5" /></image>
 
-		<image file="chess/bp.png" state="19"><color alpha="0.5" /></image>
-		<image file="chess/bn.png" state="20"><color alpha="0.5" /></image>
-		<image file="chess/bb.png" state="21"><color alpha="0.5" /></image>
-		<image file="chess/br.png" state="22"><color alpha="0.5" /></image>
-		<image file="chess/bq.png" state="23"><color alpha="0.5" /></image>
-		<image file="chess/bk.png" state="24"><color alpha="0.5" /></image>
+		<image file="chess/bp.svg" state="19"><color alpha="0.5" /></image>
+		<image file="chess/bn.svg" state="20"><color alpha="0.5" /></image>
+		<image file="chess/bb.svg" state="21"><color alpha="0.5" /></image>
+		<image file="chess/br.svg" state="22"><color alpha="0.5" /></image>
+		<image file="chess/bq.svg" state="23"><color alpha="0.5" /></image>
+		<image file="chess/bk.svg" state="24"><color alpha="0.5" /></image>
 	</element>
 
 	<group name="sb_board">
@@ -371,8 +371,8 @@ license:CC0
 
 <!-- buttons -->
 
-	<element name="brown"><rect><color red="0.58" green="0.37" blue="0.18" /></rect></element>
-	<element name="bmask"><rect><color red="0.91" green="0.89" blue="0.89" /></rect></element>
+	<element name="brown"><rect><color red="0.53" green="0.33" blue="0.16" /></rect></element>
+	<element name="bmask"><rect><color red="0.38" green="0.56" blue="0.73" /></rect></element>
 
 	<element name="but_rb" defstate="0">
 		<rect state="0"><color red="0.13" green="0.1" blue="0.1" /></rect>
@@ -423,12 +423,12 @@ license:CC0
 	<element name="text_l11"><text string="11"><color red="1" green="1" blue="1" /></text></element>
 	<element name="text_l12"><text string="12"><color red="1" green="1" blue="1" /></text></element>
 
-	<element name="text_p6"><image file="chess/wk.png"/></element>
-	<element name="text_p5"><image file="chess/wq.png"/></element>
-	<element name="text_p4"><image file="chess/wr.png"/></element>
-	<element name="text_p3"><image file="chess/wb.png"/></element>
-	<element name="text_p2"><image file="chess/wn.png"/></element>
-	<element name="text_p1"><image file="chess/wp.png"/></element>
+	<element name="text_p6"><image file="chess/wk.svg"/></element>
+	<element name="text_p5"><image file="chess/wq.svg"/></element>
+	<element name="text_p4"><image file="chess/wr.svg"/></element>
+	<element name="text_p3"><image file="chess/wb.svg"/></element>
+	<element name="text_p2"><image file="chess/wn.svg"/></element>
+	<element name="text_p1"><image file="chess/wp.svg"/></element>
 
 	<group name="buttons">
 		<bounds x="0" y="-1.2" width="88" height="18.5" />
@@ -464,8 +464,8 @@ license:CC0
 			<element ref="text_p~i~"><bounds x="~x~" y="6" width="3.9" height="3.9" /></element>
 		</repeat>
 
-		<element ref="brown" blend="add"><bounds x="0" y="-1.2" width="88" height="18.5" /></element>
 		<element ref="bmask" blend="multiply"><bounds x="0" y="-1.2" width="88" height="18.5" /></element>
+		<element ref="brown" blend="add"><bounds x="0" y="-1.2" width="88" height="18.5" /></element>
 
 		<element ref="switch" inputtag="IN.0" inputmask="0x0c" inputraw="yes"><bounds x="22.5" y="2.3" width="3.5" height="11.4" /></element>
 		<element ref="switch" inputtag="IN.1" inputmask="0x03" inputraw="yes"><bounds x="30.5" y="2.3" width="3.5" height="11.4" /></element>

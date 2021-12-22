@@ -116,9 +116,9 @@ initials
 #include "machine/rescap.h"
 #include "machine/watchdog.h"
 #include "sound/ay8910.h"
-#include "sound/ym2151.h"
-#include "sound/3812intf.h"
 #include "sound/k051649.h"
+#include "sound/ymopm.h"
+#include "sound/ymopl.h"
 #include "speaker.h"
 
 #include "konamigt.lh"
@@ -273,7 +273,7 @@ void nemesis_state::bubsys_mcu_w(offs_t offset, uint16_t data, uint16_t mem_mask
 			logerror("\tCopy page %02x to shared ram\n", page);
 
 			const uint8_t *src = memregion("bubblememory")->base();
-			memcpy(m_bubsys_shared_ram + 0xf00/2, src + page * 0x90, 0x80);
+			memcpy(&m_bubsys_shared_ram[0xf00/2], src + page * 0x90, 0x80);
 
 			// The last 2 bytes of the block are loaded into the control register
 			m_bubsys_control_ram[0] = src[page * 0x90 + 0x80] | (src[page * 0x90 + 0x81]<<8);
@@ -354,10 +354,10 @@ void nemesis_state::nemesis_filter_w(offs_t offset, uint8_t data)
 {
 	int C1 = /* offset & 0x1000 ? 4700 : */ 0; // is this right? 4.7uF seems too large
 	int C2 = offset & 0x0800 ? 33 : 0;         // 0.033uF = 33 nF
-	m_filter1->filter_rc_set_RC(filter_rc_device::LOWPASS, (AY8910_INTERNAL_RESISTANCE + 12000) / 3, 0, 0, CAP_N(C1)); // unused?
-	m_filter2->filter_rc_set_RC(filter_rc_device::LOWPASS, AY8910_INTERNAL_RESISTANCE + 1000, 10000, 0, CAP_N(C2));
-	m_filter3->filter_rc_set_RC(filter_rc_device::LOWPASS, AY8910_INTERNAL_RESISTANCE + 1000, 10000, 0, CAP_N(C2));
-	m_filter4->filter_rc_set_RC(filter_rc_device::LOWPASS, AY8910_INTERNAL_RESISTANCE + 1000, 10000, 0, CAP_N(C2));
+	m_filter1->filter_rc_set_RC(filter_rc_device::LOWPASS_3R, (AY8910_INTERNAL_RESISTANCE + 12000) / 3, 0, 0, CAP_N(C1)); // unused?
+	m_filter2->filter_rc_set_RC(filter_rc_device::LOWPASS_3R, AY8910_INTERNAL_RESISTANCE + 1000, 10000, 0, CAP_N(C2));
+	m_filter3->filter_rc_set_RC(filter_rc_device::LOWPASS_3R, AY8910_INTERNAL_RESISTANCE + 1000, 10000, 0, CAP_N(C2));
+	m_filter4->filter_rc_set_RC(filter_rc_device::LOWPASS_3R, AY8910_INTERNAL_RESISTANCE + 1000, 10000, 0, CAP_N(C2));
 
 	// konamigt also uses bits 0x0018, what are they for?
 }
@@ -3097,7 +3097,7 @@ void nemesis_state::bubsys_twinbeeb_init()
 
 	for (int i = 0; i < 0x806; i++)
 	{
-		uint16_t crc = 0;
+		[[maybe_unused]] uint16_t crc = 0;
 
 		int sourcebase = i * 0x80;
 		int destbase = i * 0x90;

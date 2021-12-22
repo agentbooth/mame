@@ -47,7 +47,6 @@ MOS MPS 6332 005 2179
 #include "cpu/m6502/m6504.h"
 #include "machine/mos6530.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "video/pwm.h"
 #include "speaker.h"
 
@@ -98,18 +97,13 @@ private:
 	void digit_w(u8 data);
 	u8 input_r();
 
-	u8 m_inp_mux;
-	u8 m_7seg_data;
-	u8 m_led_data;
+	u8 m_inp_mux = 0;
+	u8 m_7seg_data = 0;
+	u8 m_led_data = 0;
 };
 
 void chmate_state::machine_start()
 {
-	// zerofill
-	m_inp_mux = 0;
-	m_7seg_data = 0;
-	m_led_data = 0;
-
 	// register for savestates
 	save_item(NAME(m_inp_mux));
 	save_item(NAME(m_7seg_data));
@@ -287,7 +281,6 @@ void chmate_state::chmate(machine_config &config)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_1BIT(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	VOLTAGE_REGULATOR(config, "vref").add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 }
 
 void chmate_state::mk2(machine_config &config)
@@ -336,5 +329,6 @@ ROM_END
 
 //    YEAR  NAME    PARENT CMP MACHINE  INPUT   STATE         INIT        COMPANY, FULLNAME, FLAGS
 CONS( 1978, chmate, 0,      0, chmate,  chmate, chmate_state, empty_init, "Commodore", "Chessmate", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+
 CONS( 1979, ccmk2,  chmate, 0, mk2,     mk2,    chmate_state, empty_init, "Novag", "Chess Champion: MK II (ver. 1)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // 1st version (jukebox model), aka version B
 CONS( 1979, ccmk2a, chmate, 0, mk2a,    mk2a,   chmate_state, empty_init, "Novag", "Chess Champion: MK II (ver. 2)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )

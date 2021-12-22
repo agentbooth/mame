@@ -170,15 +170,16 @@ private:
 
 SNAPSHOT_LOAD_MEMBER(ace_state::snapshot_cb)
 {
+	std::vector<uint8_t> RAM(0x10000);
 	cpu_device *cpu = m_maincpu;
-	uint8_t *RAM = memregion(cpu->tag())->base();
 	address_space &space = cpu->space(AS_PROGRAM);
-	unsigned char ace_repeat, ace_byte, loop;
-	int done=0, ace_index=0x2000;
+	unsigned char ace_repeat, ace_byte;
+	u16 ace_index=0x2000;
+	bool done = false;
 
 	if (m_ram->size() < 16*1024)
 	{
-		image.seterror(IMAGE_ERROR_INVALIDIMAGE, "At least 16KB RAM expansion required");
+		image.seterror(image_error::INVALIDIMAGE, "At least 16KB RAM expansion required");
 		image.message("At least 16KB RAM expansion required");
 		return image_init_result::FAIL;
 	}
@@ -194,7 +195,7 @@ SNAPSHOT_LOAD_MEMBER(ace_state::snapshot_cb)
 			{
 			case 0x00:
 					logerror("File loaded!\r\n");
-					done = 1;
+					done = true;
 					break;
 			case 0x01:
 					image.fread(&ace_byte, 1);
@@ -202,7 +203,7 @@ SNAPSHOT_LOAD_MEMBER(ace_state::snapshot_cb)
 					break;
 			default:
 					image.fread(&ace_repeat, 1);
-					for (loop = 0; loop < ace_byte; loop++)
+					for (u8 loop = 0; loop < ace_byte; loop++)
 						RAM[ace_index++] = ace_repeat;
 					break;
 			}
@@ -215,7 +216,7 @@ SNAPSHOT_LOAD_MEMBER(ace_state::snapshot_cb)
 
 	if (!done)
 	{
-		image.seterror(IMAGE_ERROR_INVALIDIMAGE, "EOF marker not found");
+		image.seterror(image_error::INVALIDIMAGE, "EOF marker not found");
 		image.message("EOF marker not found");
 		return image_init_result::FAIL;
 	}
@@ -248,7 +249,7 @@ SNAPSHOT_LOAD_MEMBER(ace_state::snapshot_cb)
 		cpu->set_state_int(Z80_R, RAM[0x2140]);
 
 		if ((RAM[0x2119] < 0x80) || !ace_index)
-			cpu->set_state_int(STATE_GENSP, RAM[0x2118] | (RAM[0x2119] << 8));
+			cpu->set_state_int(Z80_SP, RAM[0x2118] | (RAM[0x2119] << 8));
 	}
 
 	/* Copy data to the address space */
@@ -419,7 +420,7 @@ void ace_state::ace_mem(address_map &map)
 {
 	map(0x0000, 0x1fff).rom();
 	map(0x2000, 0x23ff).mirror(0x0400).ram().share("video_ram");
-	map(0x2800, 0x2bff).mirror(0x0400).ram().share("char_ram").region(Z80_TAG, 0xfc00);
+	map(0x2800, 0x2bff).mirror(0x0400).ram().share("char_ram");
 	map(0x3000, 0x33ff).mirror(0x0c00).ram();
 	map(0x4000, 0xffff).ram();
 }
@@ -827,14 +828,14 @@ void ace_state::ace(machine_config &config)
 //-------------------------------------------------
 
 ROM_START( jupace )
-	ROM_REGION( 0x10000, Z80_TAG, 0 )
+	ROM_REGION( 0x2000, Z80_TAG, 0 )
 	ROM_LOAD( "rom-a.z1", 0x0000, 0x1000, CRC(dc8438a5) SHA1(8fa97eb71e5dd17c7d190c6587ee3840f839347c) )
 	ROM_LOAD( "rom-b.z2", 0x1000, 0x1000, CRC(4009f636) SHA1(98c5d4bcd74bcf014268cf4c00b2007ea5cc21f3) )
 
 	ROM_REGION( 0x1000, "fdc", 0 ) // Deep Thought disc interface
 	ROM_LOAD( "dos 4.bin", 0x0000, 0x1000, CRC(04c70448) SHA1(53ddcced6ae2feafd687a3b55864726656b71412) )
 
-	ROM_REGION( 0x10000, SP0256AL2_TAG, 0 )
+	ROM_REGION( 0x800, SP0256AL2_TAG, 0 )
 	ROM_LOAD( "sp0256-al2.ic1", 0x000, 0x800, CRC(b504ac15) SHA1(e60fcb5fa16ff3f3b69d36c7a6e955744d3feafc) )
 ROM_END
 

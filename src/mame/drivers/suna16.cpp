@@ -29,11 +29,10 @@ Year + Game                 By      Board      Hardware
 
 #include "cpu/m68000/m68000.h"
 #include "cpu/z80/z80.h"
-#include "sound/3526intf.h"
 #include "sound/ay8910.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
-#include "sound/ym2151.h"
+#include "sound/ymopm.h"
+#include "sound/ymopl.h"
 #include "speaker.h"
 
 
@@ -865,15 +864,6 @@ void suna16_state::bssoccer(machine_config &config)
 	DAC_4BIT_R2R(config, "rdac", 0).add_route(ALL_OUTPUTS, "rspeaker", 0.2); // unknown DAC
 	DAC_4BIT_R2R(config, "ldac2", 0).add_route(ALL_OUTPUTS, "lspeaker", 0.2); // unknown DAC
 	DAC_4BIT_R2R(config, "rdac2", 0).add_route(ALL_OUTPUTS, "rspeaker", 0.2); // unknown DAC
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "rdac", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "ldac2", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "ldac2", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "rdac2", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "rdac2", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 
@@ -927,11 +917,6 @@ void suna16_state::uballoon(machine_config &config)
 
 	DAC_4BIT_R2R(config, "ldac", 0).add_route(ALL_OUTPUTS, "lspeaker", 0.25); // unknown DAC
 	DAC_4BIT_R2R(config, "rdac", 0).add_route(ALL_OUTPUTS, "rspeaker", 0.25); // unknown DAC
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "rdac", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 
@@ -985,11 +970,6 @@ void suna16_state::sunaq(machine_config &config)
 
 	DAC_4BIT_R2R(config, "ldac", 0).add_route(ALL_OUTPUTS, "lspeaker", 0.25); // unknown DAC
 	DAC_4BIT_R2R(config, "rdac", 0).add_route(ALL_OUTPUTS, "rspeaker", 0.25); // unknown DAC
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "rdac", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 
@@ -1055,15 +1035,6 @@ void suna16_state::bestbest(machine_config &config)
 	DAC_4BIT_R2R(config, "rdac", 0).add_route(ALL_OUTPUTS, "rspeaker", 0.2); // unknown DAC
 	DAC_4BIT_R2R(config, "ldac2", 0).add_route(ALL_OUTPUTS, "lspeaker", 0.2); // unknown DAC
 	DAC_4BIT_R2R(config, "rdac2", 0).add_route(ALL_OUTPUTS, "rspeaker", 0.2); // unknown DAC
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "rdac", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "ldac2", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "ldac2", -1.0, DAC_VREF_NEG_INPUT);
-	vref.add_route(0, "rdac2", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "rdac2", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 /***************************************************************************
@@ -1384,7 +1355,7 @@ ROM_START( bestbest )
 	ROM_LOAD16_BYTE( "12.bin", 0x300001, 0x80000, CRC(ca7c8176) SHA1(1ec99db3e0840b4647d6ccdf6fda118fa9ad4f42) )
 
 	ROM_REGION( 0x200, "proms", 0 ) // ?
-	ROM_LOAD( "82s129.5", 0x000, 0x100, CRC(10bfcebb) SHA1(ae8708db7d3a8984f16e876867ecdbb4445e3378) )  // FIXED BITS (0000xx0x0000xxxx)
+	ROM_LOAD( "82s129.5", 0x000, 0x100, CRC(10bfcebb) SHA1(ae8708db7d3a8984f16e876867ecdbb4445e3378) )  // FIXED BITS (0000xx0x0000xxxx), same as the one for starfigh in suna8.cpp
 	ROM_LOAD( "82s129.6", 0x100, 0x100, CRC(10bfcebb) SHA1(ae8708db7d3a8984f16e876867ecdbb4445e3378) )  // identical to 82s129.5
 ROM_END
 

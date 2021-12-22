@@ -52,8 +52,10 @@
 #include "machine/pci-ide.h"
 #include "video/zeus2.h"
 #include "machine/timekpr.h"
-#include "coreutil.h"
 #include "emupal.h"
+
+
+namespace {
 
 // Reset bits
 #define RESET_IOASIC        0x01
@@ -87,9 +89,9 @@
 // IDSEL = AD22, PCI expansion
 // IDSEL = AD23, PCI expansion
 // IDSEL = AD24, PCI expansion
-#define PCI_ID_IDE      ":pci:08.0"
-#define PCI_ID_NILE     ":pci:0a.0"
-#define PCI_ID_9050     ":pci:0b.0"
+#define PCI_ID_IDE      "pci:08.0"
+#define PCI_ID_NILE     "pci:0a.0"
+#define PCI_ID_9050     "pci:0b.0"
 
 #define DEBUG_CONSOLE   (0)
 #define LOG_RTC         (0)
@@ -99,8 +101,8 @@
 class atlantis_state : public driver_device
 {
 public:
-	atlantis_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	atlantis_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_screen(*this, "screen"),
 		m_palette(*this, "palette"),
@@ -113,16 +115,18 @@ public:
 		m_ide(*this, PCI_ID_IDE),
 		m_rtc(*this, "rtc"),
 		m_io_analog(*this, "AN.%u", 0)
-	{ }
+	{
+		std::fill(std::begin(board_ctrl), std::end(board_ctrl), 0);
+	}
 
 	void mwskins(machine_config &config);
 
-	void init_mwskins();
-
-private:
+protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
+
+private:
 	required_device<mips3_device> m_maincpu;
 	required_device<screen_device> m_screen;
 	optional_device<palette_device> m_palette;
@@ -143,7 +147,7 @@ private:
 	uint32_t m_serial_count;
 
 
-	void asic_fifo_w(uint32_t data); // unused?
+	[[maybe_unused]] void asic_fifo_w(uint32_t data);
 
 	uint8_t exprom_r(offs_t offset);
 	void exprom_w(offs_t offset, uint8_t data);
@@ -790,7 +794,6 @@ INPUT_PORTS_END
 static DEVICE_INPUT_DEFAULTS_START(mwskins_comm)
 	DEVICE_INPUT_DEFAULTS("RS232_TXBAUD", 0xff, RS232_BAUD_14400)
 	DEVICE_INPUT_DEFAULTS("RS232_RXBAUD", 0xff, RS232_BAUD_14400)
-	DEVICE_INPUT_DEFAULTS("RS232_STARTBITS", 0xff, RS232_STARTBITS_1)
 	DEVICE_INPUT_DEFAULTS("RS232_DATABITS", 0xff, RS232_DATABITS_8)
 	DEVICE_INPUT_DEFAULTS("RS232_PARITY", 0xff, RS232_PARITY_NONE)
 	DEVICE_INPUT_DEFAULTS("RS232_STOPBITS", 0xff, RS232_STOPBITS_1)
@@ -811,7 +814,7 @@ void atlantis_state::mwskins(machine_config &config)
 	m_maincpu->set_dcache_size(16384);
 	m_maincpu->set_system_clock(66666666);
 
-	PCI_ROOT(config, ":pci", 0);
+	PCI_ROOT(config, "pci", 0);
 
 	vrc4373_device &vrc4373(VRC4373(config, PCI_ID_NILE, 0, m_maincpu));
 	vrc4373.set_ram_size(0x00800000);
@@ -927,15 +930,8 @@ ROM_START( mwskinst )
 	// another dump with data SHA1 cba09f0240dd797b554ae28b74416472d2327e5b is available, both have latest version 1.15 in the changelog at 0x934687
 ROM_END
 
-/*************************************
- *
- *  Driver initialization
- *
- *************************************/
+} // Anonymous namespace
 
-void atlantis_state::init_mwskins()
-{
-}
 
 /*************************************
  *
@@ -943,7 +939,7 @@ void atlantis_state::init_mwskins()
  *
  *************************************/
 
-GAME( 2000, mwskins,  0,       mwskins, mwskins, atlantis_state, init_mwskins, ROT0, "Midway", "Skins Game (1.06)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 2000, mwskinsa, mwskins, mwskins, mwskins, atlantis_state, init_mwskins, ROT0, "Midway", "Skins Game (1.06, alt)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE)
-GAME( 2000, mwskinso, mwskins, mwskins, mwskins, atlantis_state, init_mwskins, ROT0, "Midway", "Skins Game (1.04)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE)
-GAME( 2000, mwskinst, mwskins, mwskins, mwskins, atlantis_state, init_mwskins, ROT0, "Midway", "Skins Game Tournament Edition", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE)
+GAME( 2000, mwskins,  0,       mwskins, mwskins, atlantis_state, empty_init, ROT0, "Midway", "Skins Game (1.06)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 2000, mwskinsa, mwskins, mwskins, mwskins, atlantis_state, empty_init, ROT0, "Midway", "Skins Game (1.06, alt)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE)
+GAME( 2000, mwskinso, mwskins, mwskins, mwskins, atlantis_state, empty_init, ROT0, "Midway", "Skins Game (1.04)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE)
+GAME( 2000, mwskinst, mwskins, mwskins, mwskins, atlantis_state, empty_init, ROT0, "Midway", "Skins Game Tournament Edition", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_SUPPORTS_SAVE)

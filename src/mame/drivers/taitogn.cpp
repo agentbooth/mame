@@ -429,7 +429,7 @@ void taitogn_state::control_w(uint8_t data)
 
 			m_zoom->reset();
 
-			// assume that this also readys the sound flash chips
+			// assume that this also readies the sound flash chips
 			m_pgmflash->write(0, 0xff);
 			m_sndflash[0]->write(0, 0xff);
 			m_sndflash[1]->write(0, 0xff);
@@ -872,7 +872,14 @@ ROM_START(raycris)
 	TAITOGNET_BIOS
 
 	DISK_REGION( "pccard:taitopccard1:image" )
-	DISK_IMAGE( "raycris", 0, SHA1(015cb0e6c4421cc38809de28c4793b4491386aee))
+	DISK_IMAGE( "raycris", 0, SHA1(9d255710c87c3286542d357820d828807cc6ca07))
+ROM_END
+
+ROM_START(raycrisj)
+	TAITOGNET_BIOS
+
+	DISK_REGION( "pccard:taitopccard1:image" )
+	DISK_IMAGE( "raycrisj", 0, SHA1(015cb0e6c4421cc38809de28c4793b4491386aee))
 ROM_END
 
 ROM_START(gobyrc)
@@ -1087,7 +1094,8 @@ GAME( 1997, coh3002t,  0,        coh3002t,       coh3002t,     taitogn_state, em
 /* Taito */
 GAME( 1998, chaoshea,  coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Chaos Heat (V2.09O 1998/10/02 17:00)", MACHINE_IMPERFECT_SOUND )
 GAME( 1998, chaosheaj, chaoshea, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Chaos Heat (V2.08J 1998/09/25 17:00)", MACHINE_IMPERFECT_SOUND )
-GAME( 1998, raycris,   coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Ray Crisis (V2.03J 1998/11/15 15:43)", MACHINE_IMPERFECT_SOUND )
+GAME( 1998, raycris,   coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Ray Crisis (V2.03O 1998/11/15 15:43)", MACHINE_IMPERFECT_SOUND )
+GAME( 1998, raycrisj,  raycris,  coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Ray Crisis (V2.03J 1998/11/15 15:43)", MACHINE_IMPERFECT_SOUND )
 GAME( 1999, spuzbobl,  coh3002t, coh3002t_t2,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Super Puzzle Bobble (V2.05O 1999/2/24 18:00)", MACHINE_IMPERFECT_SOUND )
 GAME( 1999, spuzboblj, spuzbobl, coh3002t_t2,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Super Puzzle Bobble (V2.04J 1999/2/27 02:10)", MACHINE_IMPERFECT_SOUND )
 GAME( 1999, gobyrc,    coh3002t, coh3002t_t2,    gobyrc,       taitogn_state, empty_init, ROT0,   "Taito", "Go By RC (V2.03O 1999/05/25 13:31)", MACHINE_IMPERFECT_SOUND )
@@ -1096,7 +1104,7 @@ GAME( 1999, flipmaze,  coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, em
 GAME( 2001, shikigam,  coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT270, "Alfa System / Taito", "Shikigami no Shiro (V2.03J 2001/08/07 18:11)", MACHINE_IMPERFECT_SOUND )
 GAME( 2001, shikigama, coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT270, "Alfa System / Taito", "Shikigami no Shiro - internal build (V1.02J 2001/09/27 18:45)", MACHINE_IMPERFECT_SOUND )
 GAME( 2003, sianniv,   coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, init_nozoom,ROT270, "Taito", "Space Invaders Anniversary (V2.02J)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND ) // IRQ at the wrong time
-GAME( 2003, kollon,    coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Kollon (V2.04JA 2003/11/01 12:00)", MACHINE_IMPERFECT_SOUND )
+GAME( 2003, kollon,    coh3002t, coh3002t_t1,    coh3002t,     taitogn_state, empty_init, ROT0,   "Taito", "Kollon (V2.04JA 2003/11/01 12:00)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND ) // similar lockup problem as sianniv
 GAME( 2003, kollonc,   kollon,   coh3002t_cf,    coh3002t_jp1, taitogn_state, empty_init, ROT0,   "Taito", "Kollon (V2.04JC 2003/11/01 12:00)", MACHINE_IMPERFECT_SOUND )
 
 /* Success */

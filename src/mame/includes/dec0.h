@@ -37,7 +37,6 @@ public:
 		m_pfprotect(*this, "pfprotect"),
 		m_sndprotect(*this, "sndprotect"),
 		m_ram(*this, "ram"),
-		m_robocop_shared_ram(*this, "robocop_shared"),
 		m_hippodrm_shared_ram(*this, "hippodrm_shared")
 	{ }
 
@@ -62,7 +61,6 @@ public:
 	void init_hbarrel();
 	void init_slyspy();
 	void init_drgninja();
-	void init_midresb();
 	void init_ffantasybl();
 
 protected:
@@ -103,7 +101,6 @@ private:
 	optional_device<address_map_bank_device> m_pfprotect;
 	optional_device<address_map_bank_device> m_sndprotect;
 	required_shared_ptr<uint16_t> m_ram;
-	optional_shared_ptr<uint8_t> m_robocop_shared_ram;
 	optional_shared_ptr<uint8_t> m_hippodrm_shared_ram;
 
 	mcu_type m_game;
@@ -116,7 +113,6 @@ private:
 	uint8_t m_i8751_ports[4];
 
 	void dec0_control_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	void midres_sound_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t slyspy_protection_r(offs_t offset);
 	void slyspy_state_w(uint16_t data);
 	uint16_t slyspy_state_r();
@@ -131,8 +127,6 @@ private:
 	uint16_t hippodrm_68000_share_r(offs_t offset);
 	void hippodrm_68000_share_w(offs_t offset, uint16_t data);
 	void sprite_mirror_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	uint16_t robocop_68000_share_r(offs_t offset);
-	void robocop_68000_share_w(offs_t offset, uint16_t data);
 	uint16_t ffantasybl_242024_r();
 
 	uint8_t slyspy_sound_state_r();
@@ -158,6 +152,7 @@ private:
 	void dec0_i8751_reset();
 	void h6280_decrypt(const char *cputag);
 	void dec0_map(address_map &map);
+	void ffantasybl_map(address_map &map);
 	void dec0_tb_map(address_map &map);
 	void dec0_s_map(address_map &map);
 	void hippodrm_map(address_map &map);
@@ -183,6 +178,7 @@ public:
 		m_adpcm_select(*this, "adpcm_select%u", 1U),
 		m_soundbank(*this, "soundbank")
 	{
+		std::fill(std::begin(m_automat_scroll_regs), std::end(m_automat_scroll_regs), 0);
 	}
 
 	void secretab(machine_config &config);

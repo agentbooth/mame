@@ -75,7 +75,6 @@ BTANB (ssystem3):
 #include "machine/6821pia.h"
 #include "machine/nvram.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "video/hlcd0438.h"
 #include "video/md4330b.h"
 #include "video/pwm.h"
@@ -237,7 +236,6 @@ void ssystem3_state::control_w(u8 data)
 		for (int i = 0; i < 4; i++)
 			m_display[0]->write_row(i, m_lcd1_data >> (8*i) & 0xff);
 		m_display[0]->write_row(4, (m_shift ^ xorval) | 0x100);
-		m_display[0]->update();
 	}
 
 	// PB3: device serial out
@@ -309,7 +307,7 @@ void ssystem3_state::lcd2_output_w(offs_t offset, u32 data)
 
 	m_lcd2_data = u64(data) << 32 | m_lcd2_data >> 32;
 
-	if (N == 1)
+	if constexpr (N == 1)
 		lcd2_update();
 }
 
@@ -462,7 +460,7 @@ void ssystem3_state::ssystem4(machine_config &config)
 	M6502(config, m_maincpu, 4_MHz_XTAL / 2);
 	m_maincpu->set_addrmap(AS_PROGRAM, &ssystem3_state::ssystem4_map);
 
-	VIA6522(config, m_via, 4_MHz_XTAL / 2);
+	MOS6522(config, m_via, 4_MHz_XTAL / 2);
 	m_via->writepa_handler().set(FUNC(ssystem3_state::input_w));
 	m_via->readpa_handler().set(FUNC(ssystem3_state::input_r));
 	m_via->writepb_handler().set(FUNC(ssystem3_state::control_w));
@@ -485,7 +483,6 @@ void ssystem3_state::ssystem4(machine_config &config)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_1BIT(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	VOLTAGE_REGULATOR(config, "vref").add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 }
 
 void ssystem3_state::ssystem3(machine_config &config)

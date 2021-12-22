@@ -1778,7 +1778,7 @@ s64 dsp16_device_base::dau_saturate(u16 a) const
 	if (m_core->dau_auc_sat(a))
 		return m_core->dau_a[a];
 	else
-		return std::min<s64>(std::max<s64>(m_core->dau_a[a], std::numeric_limits<s32>::min()), std::numeric_limits<s32>::max());
+		return std::clamp<s64>(m_core->dau_a[a], std::numeric_limits<s32>::min(), std::numeric_limits<s32>::max());
 }
 
 inline bool dsp16_device_base::op_dau_con(u16 op, bool inc)
@@ -2082,7 +2082,7 @@ dsp16_device::dsp16_device(machine_config const &mconfig, char const *tag, devic
 			mconfig, DSP16, tag, owner, clock,
 			9,
 			address_map_constructor(FUNC(dsp16_device::data_map), this))
-	, m_rom(*this, DEVICE_SELF, 0x0800)
+	, m_rom(*this, DEVICE_SELF)
 {
 }
 
@@ -2114,7 +2114,7 @@ dsp16a_device::dsp16a_device(machine_config const &mconfig, char const *tag, dev
 			mconfig, DSP16A, tag, owner, clock,
 			16,
 			address_map_constructor(FUNC(dsp16a_device::data_map), this))
-	, m_rom(*this, DEVICE_SELF, 0x1000)
+	, m_rom(*this, DEVICE_SELF)
 {
 }
 

@@ -25,8 +25,7 @@
 #include "machine/irem_cpu.h"
 #include "machine/rstbuf.h"
 #include "sound/dac.h"
-#include "sound/ym2151.h"
-#include "sound/volt_reg.h"
+#include "sound/ymopm.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -55,13 +54,6 @@ void m90_state::quizf1_bankswitch_w(offs_t offset, uint16_t data, uint16_t mem_m
 	if (ACCESSING_BITS_0_7)
 		m_mainbank->set_entry(data & 0xf);
 }
-
-#ifdef UNUSED_FUNCTION
-void m90_state::unknown_w(uint16_t data)
-{
-	printf("%04x    ",data);
-}
-#endif
 
 /***************************************************************************/
 
@@ -123,11 +115,11 @@ void m90_state::dynablsb_main_cpu_io_map(address_map &map)
 	map(0x00, 0x01).portr("P1_P2");
 	map(0x02, 0x03).w(FUNC(m90_state::coincounter_w));
 	map(0x02, 0x03).portr("SYSTEM");
-//  map(0x04, 0x05).w(FUNC(m90_state::unknown_w));      /* dynablsb: write continuously 0x6000 */
+//  map(0x04, 0x05).w(NAME([] (uint16_t data) { printf("%04x    ", data); }));      /* dynablsb: write continuously 0x6000 */
 	map(0x04, 0x05).portr("DSW");
 	map(0x06, 0x07).portr("P3_P4");
 	map(0x80, 0x8f).writeonly().share("video_control");
-//  map(0x90, 0x91).w(FUNC(m90_state::unknown_w));
+//  map(0x90, 0x91).w(NAME([] (uint16_t data) { printf("%04x    ", data); }));
 }
 
 /*****************************************************************************/
@@ -769,9 +761,6 @@ void m90_state::m90(machine_config &config)
 	ymsnd.add_route(1, "speaker", 0.15);
 
 	DAC_8BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.1); // unknown DAC
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 void m90_state::hasamu(machine_config &config)

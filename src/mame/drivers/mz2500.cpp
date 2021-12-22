@@ -24,7 +24,7 @@
     - LayDock: hangs at title screen due of a PIT bug (timer irq dies for whatever reason);
     - Moon Child: needs mixed 3+3bpp tvram supported, kludged for now (not a real test case);
     - Moon Child: window masking doesn't mask bottom part of the screen?
-    - Moon Child: appears to be a network / system link game, obviously doesn't work with current MAME / MESS framework;
+    - Moon Child: appears to be a network / system link game, obviously doesn't work with current MAME framework;
     - Marchen Veil I: doesn't load if you try to run it directly, it does if you load another game first (for example Mappy) then do a soft reset;
     - Mugen no Shinzou II - The Prince of Darkness: dies on IPLPRO loading, presumably a wd17xx core bug;
     - Multiplan: random hangs/crashes after you set the RTC, sometimes it loads properly;
@@ -491,7 +491,7 @@ void mz2500_state::draw_cg_screen(bitmap_ind16 &bitmap,const rectangle &cliprect
 			draw_cg16_screen(bitmap,cliprect,2,640,pri);
 			break;
 		default:
-			popmessage("Unsupported CG mode %02x, contact MESS dev",m_cg_reg[0x0e]);
+			popmessage("Unsupported CG mode %02x, contact MAME dev",m_cg_reg[0x0e]);
 			break;
 	}
 }
@@ -534,10 +534,10 @@ void mz2500_state::mz2500_reconfigure_screen()
 	m_screen->configure(720, 480, visarea, m_screen->frame_period().attoseconds());
 
 	/* calculate CG window parameters here */
-	m_cg_vs = (m_cg_reg[0x08]) | ((m_cg_reg[0x09]<<8) & 1);
-	m_cg_ve = (m_cg_reg[0x0a]) | ((m_cg_reg[0x0b]<<8) & 1);
-	m_cg_hs = ((m_cg_reg[0x0c] & 0x7f)*8);
-	m_cg_he = ((m_cg_reg[0x0d] & 0x7f)*8);
+	m_cg_vs = m_cg_reg[0x08] | (BIT(m_cg_reg[0x09], 0)<<8);
+	m_cg_ve = m_cg_reg[0x0a] | (BIT(m_cg_reg[0x0b], 0)<<8);
+	m_cg_hs = (m_cg_reg[0x0c] & 0x7f)*8;
+	m_cg_he = (m_cg_reg[0x0d] & 0x7f)*8;
 
 	if(m_scr_x_size == 320)
 	{
@@ -1832,10 +1832,10 @@ void mz2500_state::mz2500(machine_config &config)
 
 	MB8877(config, m_fdc, 1_MHz_XTAL);
 
-	FLOPPY_CONNECTOR(config, "mb8877a:0", mz2500_floppies, "dd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "mb8877a:1", mz2500_floppies, "dd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "mb8877a:2", mz2500_floppies, "dd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "mb8877a:3", mz2500_floppies, "dd", floppy_image_device::default_floppy_formats);
+	FLOPPY_CONNECTOR(config, "mb8877a:0", mz2500_floppies, "dd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "mb8877a:1", mz2500_floppies, "dd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "mb8877a:2", mz2500_floppies, "dd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "mb8877a:3", mz2500_floppies, "dd", floppy_image_device::default_mfm_floppy_formats);
 
 	SOFTWARE_LIST(config, "flop_list").set_original("mz2500");
 

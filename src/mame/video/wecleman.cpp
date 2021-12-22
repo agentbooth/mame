@@ -21,7 +21,6 @@
 
 #define SPRITE_FLIPX    0x01
 #define SPRITE_FLIPY    0x02
-#define NUM_SPRITES     256
 
 
 /***************************************************************************
@@ -66,7 +65,7 @@ void wecleman_state::get_sprite_info()
 
 	uint16_t *source = m_spriteram;
 
-	sprite_t *sprite = m_sprite_list.get();
+	sprite_t *sprite = &m_sprite_list[0];
 	sprite_t *const finish = sprite + NUM_SPRITES;
 
 	int bank, code, gfx, zoom;
@@ -653,8 +652,6 @@ void wecleman_state::draw_cloud(bitmap_rgb32 &bitmap,
 
 	pen_t const *const pal_base = m_palette->pens() + pal_offset * gfx->granularity();
 
-	alpha <<= 6;
-
 	dst_base += 8;
 	for (int i = 0; i < ycount; i++)
 	{
@@ -694,9 +691,9 @@ void wecleman_state::draw_cloud(bitmap_rgb32 &bitmap,
 						int dg = (dstrgb >> 11) & 0x1f;
 						int db = (dstrgb >> 19) & 0x1f;
 
-						dr = (m_t32x32pm[dr - sr + alpha] >> 5) + dr;
-						dg = (m_t32x32pm[dg - sg + alpha] >> 5) + dg;
-						db = (m_t32x32pm[db - sb + alpha] >> 5) + db;
+						dr = (((dr - sr) * alpha) >> 5) + dr;
+						dg = (((dg - sg) * alpha) >> 5) + dg;
+						db = (((db - sb) * alpha) >> 5) + db;
 
 						dst_ptr[tx] = rgb_t(pal5bit(db), pal5bit(dg), pal5bit(dr));
 					}
@@ -747,7 +744,7 @@ void wecleman_state::draw_cloud(bitmap_rgb32 &bitmap,
 
 ------------------------------------------------------------------------*/
 
-void wecleman_state::hotchase_draw_road(bitmap_ind16 &bitmap, const rectangle &cliprect)
+void hotchase_state::hotchase_draw_road(bitmap_ind16 &bitmap, const rectangle &cliprect)
 {
 /* Referred to what's in the ROMs */
 #define XSIZE 512
@@ -809,7 +806,7 @@ void wecleman_state::wecleman_videostatus_w(offs_t offset, uint16_t data, uint16
 	}
 }
 
-void wecleman_state::hotchase_paletteram16_SBGRBBBBGGGGRRRR_word_w(offs_t offset, uint16_t data, uint16_t mem_mask)
+void hotchase_state::hotchase_paletteram16_SBGRBBBBGGGGRRRR_word_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
 	int newword, r, g, b;
 
@@ -838,7 +835,7 @@ void wecleman_state::wecleman_paletteram16_SSSSBBBBGGGGRRRR_word_w(offs_t offset
                             Initializations
 ***************************************************************************/
 
-VIDEO_START_MEMBER(wecleman_state,wecleman)
+void wecleman_state::video_start()
 {
 	/*
 	    Sprite banking - each bank is 0x20000 bytes (we support 0x40 bank codes)
@@ -852,11 +849,7 @@ VIDEO_START_MEMBER(wecleman_state,wecleman)
 		8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15
 	};
 
-	uint8_t *buffer;
-	int i, j;
-
 	assert(m_screen->format() == BITMAP_FORMAT_RGB32);
-	buffer = auto_alloc_array(machine(), uint8_t, 0x12c00);   // working buffer for sprite operations
 
 	m_gameid = WECLEMAN_ID;
 	m_gfx_bank = bank;
@@ -866,28 +859,8 @@ VIDEO_START_MEMBER(wecleman_state,wecleman)
 	m_cloud_ds = 0;
 	m_cloud_visible = 0;
 	m_black_pen = m_palette->black_pen();
-
-	m_rgb_half     =   (uint16_t*)(buffer + 0x00000);
-	m_t32x32pm     =        (int*)(buffer + 0x10020);
-	m_spr_ptr_list = (sprite_t **)(buffer + 0x12000);
-	m_spr_idx_list =       (int *)(buffer + 0x12400);
-	m_spr_pri_list =       (int *)(buffer + 0x12800);
-
-	for (i=0; i<0x8000; i++)
-	{
-		j = i>>1;
-		m_rgb_half[i] = (j&0xf) | (j&0x1e0) | (j&0x3c00);
-	}
-
-	for (j=0; j<0x20; j++)
-	{
-		for (i=-0x1f; i<0x20; i++)
-		{
-			*(m_t32x32pm + (j<<6) + i) = i * j;
-		}
-	}
-
-	m_sprite_list = std::make_unique<sprite_t []>(NUM_SPRITES);
+	std::fill(std::begin(m_bgpage), std::end(m_bgpage), 0);
+	std::fill(std::begin(m_fgpage), std::end(m_fgpage), 0);
 
 	m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(wecleman_state::wecleman_get_bg_tile_info)),
 								TILEMAP_SCAN_ROWS,
@@ -928,19 +901,19 @@ VIDEO_START_MEMBER(wecleman_state,wecleman)
 
 //  Callbacks for the K051316
 
-K051316_CB_MEMBER(wecleman_state::hotchase_zoom_callback_1)
+K051316_CB_MEMBER(hotchase_state::hotchase_zoom_callback_1)
 {
 	*code |= (*color & 0x03) << 8;
 	*color = (*color & 0xfc) >> 2;
 }
 
-K051316_CB_MEMBER(wecleman_state::hotchase_zoom_callback_2)
+K051316_CB_MEMBER(hotchase_state::hotchase_zoom_callback_2)
 {
 	*color = ((*color & 0x3f) << 1) | ((*code & 0x80) >> 7);
 }
 
 
-VIDEO_START_MEMBER(wecleman_state,hotchase)
+void hotchase_state::video_start()
 {
 	/*
 	    Sprite banking - each bank is 0x20000 bytes (we support 0x40 bank codes)
@@ -954,19 +927,13 @@ VIDEO_START_MEMBER(wecleman_state,hotchase)
 		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 	};
 
-	uint8_t *buffer;
-
-	buffer = auto_alloc_array(machine(), uint8_t, 0x400); // reserve 1k for sprite list
-
 	m_gameid = HOTCHASE_ID;
 	m_gfx_bank = bank;
 	m_spr_offsx = -0xc0;
 	m_spr_offsy = 0;
 	m_black_pen = m_palette->black_pen();
-
-	m_spr_ptr_list = (sprite_t **)buffer;
-
-	m_sprite_list = std::make_unique<sprite_t []>(NUM_SPRITES);
+	std::fill(std::begin(m_bgpage), std::end(m_bgpage), 0);
+	std::fill(std::begin(m_fgpage), std::end(m_fgpage), 0);
 }
 
 
@@ -1029,7 +996,7 @@ uint32_t wecleman_state::screen_update_wecleman(screen_device &screen, bitmap_rg
 
 		if (video_on)
 		{
-			draw_cloud(bitmap, m_gfxdecode->gfx(0), m_pageram + 0x1800, BMP_PAD, BMP_PAD, 41, 20, cloud_sx, cloud_sy, 6, 5, m_cloud_blend/BLEND_STEPS, 0);
+			draw_cloud(bitmap, m_gfxdecode->gfx(0), &m_pageram[0x1800], BMP_PAD, BMP_PAD, 41, 20, cloud_sx, cloud_sy, 6, 5, m_cloud_blend/BLEND_STEPS, 0);
 		}
 
 		m_cloud_blend += m_cloud_ds;
@@ -1062,7 +1029,7 @@ uint32_t wecleman_state::screen_update_wecleman(screen_device &screen, bitmap_rg
                                 Hot Chase
 ***************************************************************************/
 
-uint32_t wecleman_state::screen_update_hotchase(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
+uint32_t hotchase_state::screen_update_hotchase(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
 {
 	bool video_on = (m_irqctrl & 0x40) ? true : false;
 

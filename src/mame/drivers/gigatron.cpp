@@ -13,7 +13,6 @@
 #include "cpu/gigatron/gigatron.h"
 #include "screen.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "speaker.h"
 
 #include "gigatron.lh"
@@ -45,10 +44,7 @@ public:
 		, m_dac(*this, "dac")
 		, m_screen(*this, "screen")
 		, m_io_inputs(*this, "GAMEPAD")
-		, m_blinken1(*this, "blinken1")
-		, m_blinken2(*this, "blinken2")
-		, m_blinken3(*this, "blinken3")
-		, m_blinken4(*this, "blinken4")
+		, m_blinken(*this, "blinken%u", 1U)
 	{
 	}
 
@@ -86,10 +82,7 @@ private:
 	required_device<screen_device> m_screen;
 	required_ioport m_io_inputs;
 
-	output_finder<> m_blinken1;
-	output_finder<> m_blinken2;
-	output_finder<> m_blinken3;
-	output_finder<> m_blinken4;
+	output_finder<4> m_blinken;
 };
 
 //**************************************************************************
@@ -151,10 +144,11 @@ uint32_t gigatron_state::screen_update(screen_device &screen, bitmap_rgb32 &bitm
 	copybitmap(bitmap, *m_bitmap_render, 0, 0, 0, 0, cliprect);
 	video_reset();
 
-	m_blinken1 = (m_lights >> 3) & 1;
-	m_blinken2 = (m_lights >> 2) & 1;
-	m_blinken3 = (m_lights >> 1) & 1;
-	m_blinken4 = (m_lights >> 0) & 1;
+	m_blinken[0] = BIT(m_lights, 3);
+	m_blinken[1] = BIT(m_lights, 2);
+	m_blinken[2] = BIT(m_lights, 1);
+	m_blinken[3] = BIT(m_lights, 0);
+
 	return 0;
 }
 
@@ -191,10 +185,7 @@ INPUT_PORTS_END
 void gigatron_state::machine_start()
 {
 	//blinkenlights
-	m_blinken1.resolve();
-	m_blinken2.resolve();
-	m_blinken3.resolve();
-	m_blinken4.resolve();
+	m_blinken.resolve();
 
 	//Savestate stuff
 	save_item(NAME(m_lights));
@@ -230,6 +221,10 @@ void gigatron_state::gigatron(machine_config &config)
 {
 	config.set_default_layout(layout_gigatron);
 
+	/* sound hardware */
+	SPEAKER(config, "speaker").front_center();
+	DAC_4BIT_R2R(config, m_dac, 0).add_route(ALL_OUTPUTS, "speaker", 0.5);
+
 	GTRON(config, m_maincpu, MAIN_CLOCK);
 	m_maincpu->set_addrmap(AS_PROGRAM, &gigatron_state::prog_map);
 	m_maincpu->set_addrmap(AS_DATA, &gigatron_state::data_map);
@@ -243,19 +238,12 @@ void gigatron_state::gigatron(machine_config &config)
 	m_screen.set_size(640, 480);
 	m_screen.set_visarea(0, 640-1, 0, 480-1);
 	m_screen.set_screen_update(FUNC(gigatron_state::screen_update));
-
-	/* sound hardware */
-	SPEAKER(config, "speaker").front_center();
-	DAC_4BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.5);
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
-	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }
 
 ROM_START( gigatron )
 	ROM_REGION( 0x20000, "maincpu", 0 )
 	ROM_SYSTEM_BIOS(0, "v5a", "Gigatron ROM v5a")
-	ROMX_LOAD( "gigrom5a.rom",  0x0000, 0x20000, CRC(DCC071A6) SHA1(F82059BA0227FF48E4C687B90C8445DA30213EE2),ROM_BIOS(0))
+	ROMX_LOAD( "gigrom5a.rom",  0x0000, 0x20000, CRC(dcc071a6) SHA1(f82059ba0227ff48e4c687b90c8445da30213ee2),ROM_BIOS(0))
 	ROM_SYSTEM_BIOS(1, "v4", "Gigatron ROM v4")
 	ROMX_LOAD( "gigrom4.rom",  0x0000, 0x20000, CRC(78995109) SHA1(2395fc48e64099836111f5aeca39ddbf4650ea4e),ROM_BIOS(1))
 	ROM_SYSTEM_BIOS(2, "v3", "Gigatron ROM v3")

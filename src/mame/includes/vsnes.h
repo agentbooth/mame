@@ -18,6 +18,8 @@ public:
 		, m_work_ram(*this, "work_ram")
 		, m_work_ram_1(*this, "work_ram_1")
 		, m_gfx1_rom(*this, "gfx1")
+		, m_chr_banks(*this, "chr%u", 0U)
+		, m_bank_vrom(*this, "vrom%u", 0U)
 	{
 	}
 
@@ -34,7 +36,7 @@ public:
 	void init_vsvram();
 	void init_bnglngby();
 	void init_drmario();
-	void init_MMC3();
+	void init_vs108();
 	void init_vsfdf();
 	void init_tkoboxng();
 	void init_vsgun();
@@ -44,6 +46,7 @@ public:
 	void init_platoon();
 	void init_rbibb();
 	void init_vsdual();
+	void init_bootleg();
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -57,6 +60,7 @@ private:
 	optional_shared_ptr<uint8_t> m_work_ram_1;
 
 	optional_memory_region m_gfx1_rom;
+	memory_bank_array_creator<8> m_chr_banks;
 
 	void sprite_dma_0_w(address_space &space, uint8_t data);
 	void sprite_dma_1_w(address_space &space, uint8_t data);
@@ -80,7 +84,7 @@ private:
 	void vsgshoe_gun_in0_w(uint8_t data);
 	void drmario_rom_banking(offs_t offset, uint8_t data);
 	void vsvram_rom_banking(uint8_t data);
-	void mapper4_w(offs_t offset, uint8_t data);
+	void vs108_rom_banking(offs_t offset, uint8_t data);
 	uint8_t rbi_hack_r(offs_t offset);
 	uint8_t supxevs_read_prot_1_r();
 	uint8_t supxevs_read_prot_2_r();
@@ -99,15 +103,14 @@ private:
 	DECLARE_MACHINE_RESET(vsnes);
 	DECLARE_MACHINE_START(vsdual);
 	DECLARE_MACHINE_RESET(vsdual);
+	DECLARE_MACHINE_START(bootleg);
 	void v_set_videorom_bank(  int start, int count, int vrom_start_bank );
-	void mapper4_set_prg(  );
-	void mapper4_set_chr(  );
-	void mapper4_irq( int scanline, int vblank, int blanked );
 
-	uint8_t vsnes_bootleg_z80_latch_r();
 	void bootleg_sound_write(offs_t offset, uint8_t data);
 	uint8_t vsnes_bootleg_z80_data_r();
-	uint8_t vsnes_bootleg_z80_address_r();
+	uint8_t vsnes_bootleg_z80_address_r(offs_t offset);
+	void vsnes_bootleg_scanline(int scanline, int vblank, int blanked);
+	uint8_t vsnes_bootleg_ppudata();
 
 	void vsnes_bootleg_z80_map(address_map &map);
 	void vsnes_cpu1_bootleg_map(address_map &map);
@@ -120,8 +123,10 @@ private:
 	int m_sound_fix;
 	uint8_t m_last_bank;
 	std::unique_ptr<uint8_t[]> m_vram;
+	std::unique_ptr<uint8_t[]> m_extraram;
 	uint8_t* m_vrom[2];
 	std::unique_ptr<uint8_t[]> m_nt_ram[2];
+	memory_bank_array_creator<8> m_bank_vrom;
 	uint8_t* m_nt_page[2][4];
 	uint32_t m_vrom_size[2];
 	int m_vrom_banks;
@@ -132,13 +137,8 @@ private:
 	int m_size16k;
 	int m_switchlow;
 	int m_vrom4k;
-	int m_MMC3_cmd;
-	int m_MMC3_prg_bank[4];
-	int m_MMC3_chr_bank[6];
-	int m_MMC3_prg_mask;
-	int m_IRQ_enable;
-	int m_IRQ_count;
-	int m_IRQ_count_latch;
+	int m_108_reg;
+	int m_108_prg_mask;
 	int m_VSindex;
 	int m_supxevs_prot_index;
 	int m_security_counter;
@@ -146,4 +146,5 @@ private:
 
 	uint8_t m_bootleg_sound_offset;
 	uint8_t m_bootleg_sound_data;
+	int m_bootleg_latched_scanline;
 };

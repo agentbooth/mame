@@ -46,7 +46,7 @@ IC23, IC22, IC12 = Hitachi HD74HC273P
 IC15 = Natsemi CD4514BCN
 IC8 = Microchip 24LC16B
 IC7 = TI TL7705ACP
-IC1 = Philips REF34VA 9818h- (40-pin DIP: 80C51?)
+IC1 = Philips REF34VA 9818h- (40-pin DIP, confirmed to be a 80C51)
 XT1 = 20.000 MHz
 IC5 = Hitachi HD74HC08P
 IC6 = Hitachi HD74HC138P
@@ -73,7 +73,7 @@ ________________________________________________________________________________
 |  NO   | Champion    | Unknown          | ProSPDP PCB. https://www.recreativas.org/champion-6137-compumatic   | Darts                      |
 |_______|_____________|__________________|_____________________________________________________________________|____________________________|
 
-There's a later revision of the Compumatic Microdar, smaller, with a standard Atmel AT89S51 instead of the REF34 CPU.
+There's a later revision of the Compumatic Microdar, smaller, with a standard Atmel AT89S51 instead of the REF34 MCU.
 
 */
 
@@ -229,16 +229,87 @@ void microdar_state::microdv5(machine_config &config)
 	ROM_FILL(0x0e6a, 1, 0x22)
 
 ROM_START(dibifuca)
+	PHILIPS_REF34VA
+
+	ROM_REGION(0x20000, "program", 0)
+	ROM_LOAD("compumatic_925.ic3", 0x00000, 0x20000, CRC(0d49be4b) SHA1(685a35b6040ca2ca1a92068e890d4a5abbcbab0a)) // TMS27C010A
+
+	ROM_REGION(0x800, "eeprom", 0)
+	ROM_LOAD("24lc16b.ic8", 0x000, 0x800, NO_DUMP)
+ROM_END
+
+ROM_START(dibif743)
+	PHILIPS_REF34VA
+
+	ROM_REGION(0x20000, "program", 0)
+	ROM_LOAD("compumatic_743.ic3", 0x00000, 0x20000, CRC(ece15715) SHA1(f6cbc420e5d77ff753ceb1e9d3e6119e9a3f83d9)) // W29C011A
+
+	ROM_REGION(0x800, "eeprom", 0)
+	ROM_LOAD("24lc16b.ic8", 0x000, 0x800, NO_DUMP)
+ROM_END
+
+ROM_START(dibif727)
 	// Philips REF34VA K7V5534 9818h
 	PHILIPS_REF34VA
 
 	ROM_REGION(0x20000, "program", 0)
-	ROM_LOAD("compumatic_727.ic3", 0x00000, 0x20000, CRC(ccf973b6) SHA1(ab67e466849b3bbd8f24be041c979c3f833a32a8))
+	ROM_LOAD("compumatic_727.ic3", 0x00000, 0x20000, CRC(ccf973b6) SHA1(ab67e466849b3bbd8f24be041c979c3f833a32a8)) // W29C011A
 
 	ROM_REGION(0x800, "eeprom", 0)
 	ROM_LOAD("24lc16b.ic8", 0x000, 0x800, CRC(1cae70db) SHA1(575d4c787fd65950417e85fdb34d2961fc327c74))
 ROM_END
 
+/* Info about "Far West":
+ The sound contains shooting samples and a small sample of the Rawhide main theme.
+ Background layout (four shooting targets as food cans with led circles), see https://youtu.be/YVxThMwhvKQ 
+
+                            o o o o
+                    o o o o         o o o o          <- 16 LEDs
+                o o                         o o         first three from the left red, the rest yellow
+
+
+              o                                  o
+           o     o                            o     o      <- Outer circle: 20 blue LEDs
+        o     o     o                      o     o     o      Middle circle: 20 green LEDS
+      o     o   o     o                  o     o   o     o    Inner circle: 7 red LEDs
+    o     o       o     o              o     o       o     o
+  o     o           o     o          o     o           o     o
+      o      o o      o                  o      o o      o
+ o   o      o o o      o   o        o   o      o o o      o   o
+      o      o o      o                  o      o o      o
+   o    o           o    o            o    o           o    o
+          o       o                          o       o
+      o     o   o    o                   o     o   o    o
+              o                                  o
+           o     o                            o     o
+              o                                  o
+
+ |PLAYER 1|  |PLAYER 2|  |PLAYER 3|  |PLAYER 4|     |SHOOTS |   <- Labels.
+  __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __      The display shows scrolling text all across the 20 digits
+ |_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|   <- 20 x 7-segments display
+ |_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
+
+              o                                  o
+           o     o                            o     o
+        o     o     o                      o     o     o
+      o     o   o     o                  o     o   o     o
+    o     o       o     o              o     o       o     o
+  o     o           o     o          o     o           o     o
+      o      o o      o                  o      o o      o
+ o   o      o o o      o   o        o   o      o o o      o   o
+      o      o o      o                  o      o o      o
+   o    o           o    o            o    o           o    o
+          o       o                          o       o
+      o     o   o    o                   o     o   o    o
+              o                                  o
+           o     o                            o     o
+              o                                  o
+
+  ________
+  | START | <- Button with light
+  | BUTTON|
+  |_______|
+*/
 ROM_START(cfarwest)
 	// Philips REF34VA K8V2873 Phr9920 0
 	PHILIPS_REF34VA
@@ -248,6 +319,7 @@ ROM_START(cfarwest)
 
 	// No EEPROM on this PCB
 ROM_END
+
 
 /* Compumatic ProSPDP-V3 PCB
   ____________________________________________________________________________________________________
@@ -308,6 +380,7 @@ ROM_START(prospdp)
 	ROM_LOAD("atf16v8b.ic7", 0x000, 0x117, CRC(85e98105) SHA1(9b3389eedd62b3e599559a03e9664ed1e374d60b))
 ROM_END
 
+
 /* Compumatic Microdard-V5 PCB
    _______________________________________________________________________________
   | ______    _____________________________  _________  TEST  ___  _______     __|
@@ -329,6 +402,19 @@ ROM_END
   |______________________________________________________________________________|
 */
 ROM_START(diolakoa)
+	PHILIPS_REF34VA
+
+	ROM_REGION(0x20000, "program", 0)
+	ROM_LOAD("mt_plus_8_38.ic3", 0x00000, 0x20000, CRC(5d58bbbc) SHA1(b47adf99c2a443792b99d3881602ffdbdccfd3b9))
+
+	ROM_REGION(0x800, "eeprom", 0)
+	ROM_LOAD("24c16.ic6", 0x000, 0x800, NO_DUMP)
+
+	ROM_REGION(0x117, "plds", 0)
+	ROM_LOAD("palce16v8h.ic8", 0x000, 0x117, NO_DUMP)
+ROM_END
+
+ROM_START(diola827)
 	// REF 0034 9515S (without Philips logos)
 	PHILIPS_REF34VA
 
@@ -342,7 +428,11 @@ ROM_START(diolakoa)
 	ROM_LOAD("palce16v8h.ic8", 0x000, 0x117, NO_DUMP)
 ROM_END
 
-GAME(199?, dibifuca, 0, microdar, microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca",                                   MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, cfarwest, 0, microdar, microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Far West (Compumatic)",                          MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, prospdp,  0, prospdp,  microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Unknown Compumatic ProSPDP based darts machine", MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, diolakoa, 0, microdv5, microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa",                                   MACHINE_IS_SKELETON_MECHANICAL)
+
+GAME(199?, dibifuca, 0,        microdar, microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v9.25)",                           MACHINE_IS_SKELETON_MECHANICAL)
+GAME(199?, dibif743, dibifuca, microdar, microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v7.43)",                           MACHINE_IS_SKELETON_MECHANICAL)
+GAME(199?, dibif727, dibifuca, microdar, microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v7.27)",                           MACHINE_IS_SKELETON_MECHANICAL)
+GAME(1997, cfarwest, 0,        microdar, microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Far West (Compumatic)",                          MACHINE_IS_SKELETON_MECHANICAL)
+GAME(1997, prospdp,  0,        prospdp,  microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Unknown Compumatic ProSPDP based darts machine", MACHINE_IS_SKELETON_MECHANICAL)
+GAME(1997, diolakoa, 0,        microdv5, microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa (v8.38)",                           MACHINE_IS_SKELETON_MECHANICAL)
+GAME(1997, diola827, diolakoa, microdv5, microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa (v8.27)",                           MACHINE_IS_SKELETON_MECHANICAL)

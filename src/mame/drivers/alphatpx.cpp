@@ -1246,8 +1246,8 @@ void alphatp_12_state::alphatp2(machine_config &config)
 	m_fdc->intrq_wr_callback().set(FUNC(alphatp_12_state::fdcirq_w));
 	m_fdc->drq_wr_callback().set(FUNC(alphatp_12_state::fdcdrq_w));
 	m_fdc->hld_wr_callback().set(FUNC(alphatp_12_state::fdchld_w));
-	FLOPPY_CONNECTOR(config, "fdc:0", alphatp2_floppies, "525ssdd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "fdc:1", alphatp2_floppies, "525ssdd", floppy_image_device::default_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:0", alphatp2_floppies, "525ssdd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:1", alphatp2_floppies, "525ssdd", floppy_image_device::default_mfm_floppy_formats);
 }
 
 void alphatp_12_state::alphatp2u(machine_config &config)
@@ -1255,8 +1255,8 @@ void alphatp_12_state::alphatp2u(machine_config &config)
 	alphatp2(config);
 	config.device_remove("fdc:0");
 	config.device_remove("fdc:1");
-	FLOPPY_CONNECTOR(config, "fdc:0", alphatp2su_floppies, "525dd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "fdc:1", alphatp2su_floppies, "525dd", floppy_image_device::default_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:0", alphatp2su_floppies, "525dd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:1", alphatp2su_floppies, "525dd", floppy_image_device::default_mfm_floppy_formats);
 }
 
 
@@ -1323,8 +1323,8 @@ void alphatp_34_state::alphatp3(machine_config &config)
 	m_fdc->intrq_wr_callback().set(FUNC(alphatp_34_state::fdcirq_w));
 	m_fdc->drq_wr_callback().set(FUNC(alphatp_34_state::fdcdrq_w));
 	m_fdc->hld_wr_callback().set(FUNC(alphatp_34_state::fdchld_w));
-	FLOPPY_CONNECTOR(config, "fdc:0", alphatp3_floppies, "525qd", floppy_image_device::default_floppy_formats);
-	FLOPPY_CONNECTOR(config, "fdc:1", alphatp3_floppies, "525qd", floppy_image_device::default_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:0", alphatp3_floppies, "525qd", floppy_image_device::default_mfm_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:1", alphatp3_floppies, "525qd", floppy_image_device::default_mfm_floppy_formats);
 }
 
 void alphatp_34_state::alphatp30(machine_config &config)
@@ -1411,7 +1411,7 @@ ROM_END
 // Alphatronic P3
 ROM_START( alphatp3 )
 	ROM_REGION(0x1800, "boot", 0) // P3 ROM space 0x1000
-	ROM_SYSTEM_BIOS(0, "gx347", "gx347") // earlier P3, seperate 48K and 16K RAM boards
+	ROM_SYSTEM_BIOS(0, "gx347", "gx347") // earlier P3, separate 48K and 16K RAM boards
 	ROM_SYSTEM_BIOS(1, "lb352", "lb352") // later P3, one 64K RAM board
 
 	ROM_LOAD("caap36_02_19.bin", 0x0000, 0x1000, CRC(23df6666) SHA1(5ea04cd299dec9951425eb91ecceb4818c4c6378) ) // identical between earlier and later P3

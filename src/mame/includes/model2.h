@@ -141,8 +141,6 @@ protected:
 	u8 m_driveio_comm_data;
 	int m_iop_write_num;
 	u32 m_iop_data;
-	int m_geo_iop_write_num;
-	u32 m_geo_iop_data;
 
 	u32 m_geo_read_start_address;
 	u32 m_geo_write_start_address;
@@ -248,10 +246,10 @@ protected:
 	void scsp_map(address_map &map);
 
 	void debug_init();
-	void debug_commands( int ref, const std::vector<std::string> &params );
-	void debug_geo_dasm_command(int ref, const std::vector<std::string> &params);
-	void debug_tri_dump_command(int ref, const std::vector<std::string> &params);
-	void debug_help_command(int ref, const std::vector<std::string> &params);
+	void debug_commands(const std::vector<std::string> &params);
+	void debug_geo_dasm_command(const std::vector<std::string> &params);
+	void debug_tri_dump_command(const std::vector<std::string> &params);
+	void debug_help_command(const std::vector<std::string> &params);
 
 	virtual void video_start() override;
 
@@ -441,12 +439,16 @@ public:
 		: model2o_state(mconfig, type, tag)
 	{}
 
-	u8 gtx_r(offs_t offset);
 	void daytona_gtx(machine_config &config);
-	void model2o_gtx_mem(address_map &map);
+
+protected:
+	virtual void machine_reset() override;
 
 private:
 	int m_gtx_state;
+
+	u8 gtx_r(offs_t offset);
+	void model2o_gtx_mem(address_map &map);
 };
 
 /*****************************
@@ -627,7 +629,7 @@ static inline u16 get_texel( u32 base_x, u32 base_y, int x, int y, u32 *sheet )
 }
 
 // 0x10000 = size of the tri_sorted_list array
-class model2_renderer : public poly_manager<float, m2_poly_extra_data, 4, 0x10000>
+class model2_renderer : public poly_manager<float, m2_poly_extra_data, 4>
 {
 public:
 	typedef void (model2_renderer::*scanline_render_func)(int32_t scanline, const extent_t& extent, const m2_poly_extra_data& object, int threadid);
@@ -636,7 +638,7 @@ public:
 	using triangle = model2_state::triangle;
 
 	model2_renderer(model2_state& state)
-		: poly_manager<float, m2_poly_extra_data, 4, 0x10000>(state.machine())
+		: poly_manager<float, m2_poly_extra_data, 4>(state.machine())
 		, m_state(state)
 		, m_destmap(512, 512)
 	{

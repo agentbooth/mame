@@ -39,6 +39,7 @@ public:
 		, m_bankw(*this, "bankw")
 		, m_bank3(*this, "bank3")
 		, m_floppy_timer(*this, "floppy_timer")
+		, m_leds(*this, "led%c", unsigned('A'))
 		{}
 
 	void omni2(machine_config &config);
@@ -48,8 +49,14 @@ public:
 	void kaypro484(machine_config &config);
 	void kaypro10(machine_config &config);
 	void kaypro284(machine_config &config);
+	void kaypro4x(machine_config &config);
+	void kaypro1(machine_config &config);
 
 	void init_kaypro();
+
+protected:
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
 
 private:
 	void kaypro484_io(address_map &map);
@@ -73,8 +80,8 @@ private:
 	DECLARE_WRITE_LINE_MEMBER(fdc_drq_w);
 	u8 kaypro_videoram_r(offs_t offset);
 	void kaypro_videoram_w(offs_t offset, u8 data);
-	void machine_start() override;
-	void machine_reset() override;
+	static void floppy_formats(format_registration &fr);
+
 	void kaypro_palette(palette_device &palette) const;
 	uint32_t screen_update_kayproii(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_kaypro484(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
@@ -113,6 +120,7 @@ private:
 	required_memory_bank m_bankw;
 	required_memory_bank m_bank3;
 	required_device<timer_device> m_floppy_timer;
+	output_finder<2> m_leds;
 };
 
 #endif // MAME_INCLUDES_KAYPRO_H

@@ -2,8 +2,6 @@
 // copyright-holders:Wilbert Pol, Kevin Thacker
 /******************************************************************************
 
-        nc.cpp
-
         NC100/NC150/NC200 Notepad computer
 
         system driver
@@ -83,15 +81,11 @@
         Self Test:
 
         - requires memory save and real time clock save to be working!
-        (i.e. for MESS nc100 driver, nc100.nv can be created)
+        (i.e. for MAME nc100 driver, nc100.nv can be created)
         - turn off nc (use NMI button)
         - reset+FUNCTION+SYMBOL must be pressed together.
 
         Note: NC200 Self test does not test disc hardware :(
-
-
-
-        Kevin Thacker [MESS driver]
 
  ******************************************************************************/
 
@@ -289,13 +283,6 @@ TIMER_CALLBACK_MEMBER(nc_state::nc_keyboard_timer_callback)
 		m_keyboard_timer->reset();
 }
 
-
-static const char *const nc_bankhandler_r[]={
-"bank1", "bank2", "bank3", "bank4"};
-
-static const char *const nc_bankhandler_w[]={
-"bank5", "bank6", "bank7", "bank8"};
-
 void nc_state::nc_refresh_memory_bank_config(int bank)
 {
 	address_space &space = m_maincpu->space(AS_PROGRAM);
@@ -304,13 +291,13 @@ void nc_state::nc_refresh_memory_bank_config(int bank)
 	int mem_bank;
 	char bank1[20];
 	char bank5[20];
-	snprintf(bank1,ARRAY_LENGTH(bank1),"bank%d",bank+1);
-	snprintf(bank5,ARRAY_LENGTH(bank5),"bank%d",bank+5);
+	snprintf(bank1,std::size(bank1),"bank%d",bank+1);
+	snprintf(bank5,std::size(bank5),"bank%d",bank+5);
 
 	mem_type = (m_memory_config[bank]>>6) & 0x03;
 	mem_bank = m_memory_config[bank] & 0x03f;
 
-	space.install_read_bank((bank * 0x4000), (bank * 0x4000) + 0x3fff, nc_bankhandler_r[bank]);
+	space.install_read_bank((bank * 0x4000), (bank * 0x4000) + 0x3fff, m_bankhandler_r[bank]);
 
 	switch (mem_type)
 	{
@@ -337,7 +324,7 @@ void nc_state::nc_refresh_memory_bank_config(int bank)
 			membank(bank1)->set_base(ptr);
 			membank(bank5)->set_base(ptr);
 
-			space.install_write_bank((bank * 0x4000), (bank * 0x4000) + 0x3fff, nc_bankhandler_w[bank]);
+			space.install_write_bank((bank * 0x4000), (bank * 0x4000) + 0x3fff, m_bankhandler_w[bank]);
 			LOG("BANK %d: RAM\n",bank);
 		}
 		break;
@@ -358,7 +345,7 @@ void nc_state::nc_refresh_memory_bank_config(int bank)
 				{
 					/* yes */
 					membank(bank5)->set_base(ptr);
-					space.install_write_bank((bank * 0x4000), (bank * 0x4000) + 0x3fff, nc_bankhandler_w[bank]);
+					space.install_write_bank((bank * 0x4000), (bank * 0x4000) + 0x3fff, m_bankhandler_w[bank]);
 				}
 				else
 				{
@@ -992,11 +979,11 @@ INPUT_PORTS_END
 #if 0
 void nc_state::nc150_init_machine()
 {
-		m_membank_internal_ram_mask = 7;
+	m_membank_internal_ram_mask = 7;
 
-		m_membank_card_ram_mask = 0x03f;
+	m_membank_card_ram_mask = 0x03f;
 
-		nc_state::machine_reset();
+	nc_state::machine_reset();
 }
 #endif
 
@@ -1005,18 +992,16 @@ void nc_state::nc150_init_machine()
 /**********************************************************************************************************/
 /* NC200 hardware */
 
-#ifdef UNUSED_FUNCTION
 void nc200_state::nc200_display_memory_start_w(uint8_t data)
 {
 	/* bit 7: A15 */
 	/* bit 6: A14 */
 	/* bit 5: A13 */
 	/* bit 4-0: not used */
-	m_display_memory_start = (data & 0x0e0)<<(12-4);
+	m_display_memory_start = (data & 0x0e0) << (12 - 4);
 
 	LOG("disp memory w: %04x\n", m_display_memory_start);
 }
-#endif
 
 
 WRITE_LINE_MEMBER(nc200_state::write_nc200_centronics_ack)
@@ -1092,15 +1077,13 @@ WRITE_LINE_MEMBER(nc200_state::nc200_fdc_interrupt)
 	nc_update_interrupts();
 }
 
-#ifdef UNUSED_FUNCTION
-void nc_state::nc200_floppy_drive_index_callback(int drive_id)
+void nc200_state::nc200_floppy_drive_index_callback(int drive_id)
 {
 	LOGDEBUG("nc200 index pulse\n");
 //  m_irq_status |= (1<<4);
 
 //  nc_update_interrupts(Machine);
 }
-#endif
 
 void nc200_state::machine_reset()
 {
@@ -1447,12 +1430,6 @@ void nc100_state::nc100(machine_config &config)
 	rtc.out_alarm_callback().set(FUNC(nc100_state::nc100_tc8521_alarm_callback));
 }
 
-static const floppy_format_type ibmpc_floppy_formats[] = {
-	FLOPPY_PC_FORMAT,
-	FLOPPY_MFI_FORMAT,
-	nullptr
-};
-
 static void ibmpc_floppies(device_slot_interface &device)
 {
 	device.option_add("525dd", FLOPPY_525_DD);
@@ -1483,8 +1460,8 @@ void nc200_state::nc200(machine_config &config)
 
 	UPD765A(config, m_fdc, 8'000'000, true, true);
 	m_fdc->intrq_wr_callback().set(FUNC(nc200_state::nc200_fdc_interrupt));
-	FLOPPY_CONNECTOR(config, "upd765:0", ibmpc_floppies, "525dd", ibmpc_floppy_formats);
-	FLOPPY_CONNECTOR(config, "upd765:1", ibmpc_floppies, "525dd", ibmpc_floppy_formats);
+	FLOPPY_CONNECTOR(config, "upd765:0", ibmpc_floppies, "525dd", floppy_image_device::default_pc_floppy_formats);
+	FLOPPY_CONNECTOR(config, "upd765:1", ibmpc_floppies, "525dd", floppy_image_device::default_pc_floppy_formats);
 
 	MC146818(config, "mc", 4.194304_MHz_XTAL);
 

@@ -220,7 +220,7 @@ Notes:
       4560      - Japan Radio Co. JRC4560 Op Amp IC (DIP8)
       YAC513-W  - Yamaha YAC513-M DAC (SOIC16)
       HA13118   - Audio Power AMP IC (ZIP15)
-      JP121     - Jumper used when swapping game board cartridges
+      JP121     - Jumper to set sound output to mono or stereo
       JP051     - Slide Switch to flip screen
       CN121     - Output connector for left/right speakers
       EXCN1/2   - Connectors for player 3 & 4 controls
@@ -1008,8 +1008,8 @@ void seibuspi_state::base_map(address_map &map)
 	map(0x00000604, 0x00000607).portr("INPUTS");
 	map(0x00000608, 0x0000060b).portr("EXCH");
 	map(0x0000060c, 0x0000060f).portr("SYSTEM");
-	map(0x00200000, 0x003fffff).rom().share("share1");
-	map(0xffe00000, 0xffffffff).rom().region("maincpu", 0).share("share1"); // ROM location in real-mode
+	map(0x00200000, 0x003fffff).rom().region("maincpu", 0);
+	map(0xffe00000, 0xffffffff).rom().region("maincpu", 0); // ROM location in real-mode
 }
 
 void seibuspi_state::sei252_map(address_map &map)
@@ -1119,8 +1119,8 @@ void seibuspi_state::sys386f_map(address_map &map)
 	map(0x00000494, 0x00000497).w(FUNC(seibuspi_state::video_dma_address_w));
 	map(0x00000600, 0x00000607).r("ymz", FUNC(ymz280b_device::read)).umask32(0x000000ff);
 	map(0x0000060c, 0x0000060f).r(FUNC(seibuspi_state::ejsakura_keyboard_r));
-	map(0x00200000, 0x003fffff).rom().share("share1");
-	map(0xffe00000, 0xffffffff).rom().region("maincpu", 0).share("share1"); // ROM location in real-mode
+	map(0x00200000, 0x003fffff).rom().region("maincpu", 0);
+	map(0xffe00000, 0xffffffff).rom().region("maincpu", 0); // ROM location in real-mode
 }
 
 
@@ -1183,7 +1183,7 @@ void seibuspi_state::spi_soundmap(address_map &map)
 {
 	sxx2e_soundmap(map);
 	map(0x4008, 0x4008).w("soundfifo2", FUNC(fifo7200_device::data_byte_w));
-	map(0x400a, 0x400a).portr("JUMPERS"); // TO DO: get these to actually work
+	map(0x400a, 0x400a).portr("JUMPERS"); // TODO: get these to actually work (only on SXX2C)
 }
 
 void seibuspi_state::spi_ymf271_map(address_map &map)
@@ -1233,7 +1233,7 @@ CUSTOM_INPUT_MEMBER(seibuspi_state::ejanhs_encode)
 	static const u8 encoding[] = { 6, 5, 4, 3, 2, 7 };
 	ioport_value state = ~m_key[N]->read();
 
-	for (int bit = 0; bit < ARRAY_LENGTH(encoding); bit++)
+	for (int bit = 0; bit < std::size(encoding); bit++)
 		if (state & (1 << bit))
 			return encoding[bit];
 	return 0;
@@ -1241,6 +1241,16 @@ CUSTOM_INPUT_MEMBER(seibuspi_state::ejanhs_encode)
 
 
 /*****************************************************************************/
+
+// JP1 is for SXX2C only
+static INPUT_PORTS_START( sxx2c )
+	PORT_START("JUMPERS")
+	PORT_DIPNAME( 0x03, 0x03, "JP1" ) // "Only used when game-board is changed with a new game" in manual
+	PORT_DIPSETTING(    0x03, "Update" ) // "Changing game" in manual
+	PORT_DIPSETTING(    0x00, "Normal" )
+	PORT_BIT( 0xfc, IP_ACTIVE_LOW, IPT_UNUSED )
+INPUT_PORTS_END
+
 
 static INPUT_PORTS_START( sxx2e )
 	PORT_START("INPUTS")
@@ -1286,13 +1296,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( spi_3button )
 	PORT_INCLUDE( sxx2e )
-
-	PORT_START("JUMPERS")
-	PORT_DIPNAME( 0x03, 0x03, "JP1" )
-	PORT_DIPSETTING(    0x03, "Update" )
-	PORT_DIPSETTING(    0x01, DEF_STR( Off ) )
-	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_BIT( 0xfc, IP_ACTIVE_LOW, IPT_UNUSED )
+	PORT_INCLUDE( sxx2c )
 INPUT_PORTS_END
 
 
@@ -1380,6 +1384,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( spi_ejanhs )
 	PORT_INCLUDE( spi_mahjong_keyboard )
+	PORT_INCLUDE( sxx2c )
 
 	PORT_START("INPUTS")
 	PORT_BIT( 0x00000007, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(seibuspi_state, ejanhs_encode<3>)
@@ -1405,13 +1410,6 @@ static INPUT_PORTS_START( spi_ejanhs )
 
 	PORT_START("EXCH") // Another set of mahjong inputs is decoded from here but not used
 	PORT_BIT( 0xffffffff, IP_ACTIVE_LOW, IPT_UNKNOWN )
-
-	PORT_START("JUMPERS")
-	PORT_DIPNAME( 0x03, 0x03, "JP1" )
-	PORT_DIPSETTING(    0x03, "Update" )
-	PORT_DIPSETTING(    0x01, DEF_STR( Off ) )
-	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_BIT( 0xfc, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("COIN")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 )
@@ -2046,8 +2044,8 @@ void seibuspi_state::init_viprp1o()
 
 void seibuspi_state::init_ejanhs()
 {
-//  idle skip doesn't work properly?
-//  if (ENABLE_SPEEDUP_HACKS) m_maincpu->space(AS_PROGRAM).install_read_handler(0x002d224, 0x002d227, read32smo_delegate(*this, FUNC(seibuspi_state::ejanhs_speedup_r)));
+	// idle skip doesn't work properly?
+	if (false && ENABLE_SPEEDUP_HACKS) m_maincpu->space(AS_PROGRAM).install_read_handler(0x002d224, 0x002d227, read32smo_delegate(*this, FUNC(seibuspi_state::ejanhs_speedup_r)));
 	init_sei252();
 }
 
@@ -2129,15 +2127,13 @@ u32 seibuspi_state::viprp1o_speedup_r()
 	return m_mainram[0x001d49c/4];
 }
 
-#ifdef UNUSED_FUNCTION
 // causes input problems?
 u32 seibuspi_state::ejanhs_speedup_r()
 {
-// osd_printf_debug("%08x\n",m_maincpu->pc());
 	if (m_maincpu->pc()==0x03032c7) m_maincpu->spin_until_interrupt(); // idle
+//  osd_printf_debug("%08x\n",m_maincpu->pc());
 	return m_mainram[0x002d224/4];
 }
-#endif
 
 u32 seibuspi_state::rdft_speedup_r()
 {

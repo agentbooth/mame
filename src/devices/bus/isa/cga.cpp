@@ -77,7 +77,7 @@
 
 
 TODO:
-- Update more drivers in MESS and MAME and unify with src/emu/video/pc_cga.c
+- Update more drivers in MAME and unify with src/emu/video/pc_cga.c
 - Separate out more cards/implementations
 
 ***************************************************************************/
@@ -332,9 +332,9 @@ void isa8_cga_device::device_start()
 	set_isa_device();
 	m_vram.resize(m_vram_size);
 	m_isa->install_device(0x3d0, 0x3df, read8sm_delegate(*this, FUNC(isa8_cga_device::io_read)), write8sm_delegate(*this, FUNC(isa8_cga_device::io_write)));
-	m_isa->install_bank(0xb8000, 0xb8000 + (std::min<size_t>)(0x8000, m_vram_size) - 1, "bank_cga", &m_vram[0]);
+	m_isa->install_bank(0xb8000, 0xb8000 + (std::min<size_t>)(0x8000, m_vram_size) - 1, &m_vram[0]);
 	if(m_vram_size == 0x4000)
-		m_isa->install_bank(0xbc000, 0xbffff, "bank_cga", &m_vram[0]);
+		m_isa->install_bank(0xbc000, 0xbffff, &m_vram[0]);
 
 	/* Initialise the cga palette */
 	int i;
@@ -1341,7 +1341,7 @@ void isa8_cga_pc1512_device::device_start()
 	isa8_cga_device::device_start();
 
 	m_isa->install_device(0x3d0, 0x3df, read8sm_delegate(*this, FUNC(isa8_cga_pc1512_device::io_read)), write8sm_delegate(*this, FUNC(isa8_cga_pc1512_device::io_write)));
-	m_isa->install_bank(0xb8000, 0xbbfff, "bank1", &m_vram[0]);
+	m_isa->install_bank(0xb8000, 0xbbfff, &m_vram[0]);
 
 	address_space &space = m_isa->memspace();
 
@@ -1367,11 +1367,7 @@ void isa8_cga_pc1512_device::device_reset()
 void isa8_wyse700_device::change_resolution(uint8_t mode)
 {
 	int width = 0, height = 0;
-	if (mode & 2) {
-		machine().root_device().membank("bank_wy1")->set_base(&m_vram[0x10000]);
-	} else {
-		machine().root_device().membank("bank_wy1")->set_base(&m_vram[0x00000]);
-	}
+	m_vrambank->set_entry((mode >> 1) & 1);
 	if ((m_control & 0xf0) == (mode & 0xf0)) return;
 
 	switch(mode & 0xf0) {
@@ -1441,7 +1437,7 @@ DEFINE_DEVICE_TYPE(ISA8_WYSE700, isa8_wyse700_device, "wyse700", "Wyse 700")
 //-------------------------------------------------
 
 isa8_wyse700_device::isa8_wyse700_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	isa8_cga_device(mconfig, ISA8_WYSE700, tag, owner, clock), m_bank_offset(0), m_bank_base(0), m_control(0)
+	isa8_cga_device(mconfig, ISA8_WYSE700, tag, owner, clock), m_vrambank(*this, "wy1"), m_bank_offset(0), m_bank_base(0), m_control(0)
 {
 	m_vram_size = 0x20000;
 	m_start_offset = 0x18000;
@@ -1480,8 +1476,9 @@ void isa8_wyse700_device::device_start()
 	isa8_cga_device::device_start();
 
 	m_isa->install_device(0x3d0, 0x3df, read8sm_delegate(*this, FUNC(isa8_wyse700_device::io_read)), write8sm_delegate(*this, FUNC(isa8_wyse700_device::io_write)));
-	m_isa->install_bank(0xa0000, 0xaffff, "bank_wy1", &m_vram[0x00000]);
-	m_isa->install_bank(0xb0000, 0xbffff, "bank_cga", &m_vram[0x10000]);
+	m_vrambank->configure_entries(0, 2, m_vram.data(), 0x10000);
+	m_isa->install_bank(0xa0000, 0xaffff, m_vrambank);
+	m_isa->install_bank(0xb0000, 0xbffff, &m_vram[0x10000]);
 }
 
 void isa8_wyse700_device::device_reset()
@@ -1490,6 +1487,9 @@ void isa8_wyse700_device::device_reset()
 	m_control = 0;
 	m_bank_offset = 0;
 	m_bank_base = 0;
+	int width = 640, height = 400;
+	rectangle visarea(0, width-1, 0, height-1);
+	m_screen->configure(width, height, visarea, HZ_TO_ATTOSECONDS(60));
 }
 
 uint32_t isa8_wyse700_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
@@ -1588,9 +1588,9 @@ void isa8_ec1841_0002_device::io_write(offs_t offset, uint8_t data)
 						read8sm_delegate( *this, FUNC(isa8_ec1841_0002_device::char_ram_read)),
 						write8sm_delegate(*this, FUNC(isa8_ec1841_0002_device::char_ram_write)));
 		} else {
-			m_isa->install_bank(0xb8000, 0xb8000 + (std::min<size_t>)(0x8000, m_vram_size) - 1, "bank_cga", &m_vram[0]);
+			m_isa->install_bank(0xb8000, 0xb8000 + (std::min<size_t>)(0x8000, m_vram_size) - 1, &m_vram[0]);
 			if(m_vram_size == 0x4000)
-				m_isa->install_bank(0xbc000, 0xbffff, "bank_cga", &m_vram[0]);
+				m_isa->install_bank(0xbc000, 0xbffff, &m_vram[0]);
 		}
 		break;
 	default:
@@ -1985,6 +1985,6 @@ void isa8_cga_cportiii_device::port_23c6_w(uint8_t data)
 	if(BIT(data, 3))
 		m_isa->install_memory(0xb8000, 0xb9fff, read8sm_delegate(*this, FUNC(isa8_cga_cportiii_device::char_ram_read)), write8sm_delegate(*this, FUNC(isa8_cga_cportiii_device::char_ram_write)));
 	else
-		m_isa->install_bank(0xb8000, 0xb8000 + 0x8000 - 1, "bank_cga", &m_vram[0]);
+		m_isa->install_bank(0xb8000, 0xb8000 + 0x8000 - 1, &m_vram[0]);
 }
 
