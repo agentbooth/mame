@@ -1,4 +1,4 @@
-// license:BSD-3-Clause 
+// license:BSD-3-Clause
 // copyright-holders: Joakim Larsson Edstrom
 /***************************************************************************
 
@@ -723,7 +723,7 @@ void duscc_channel::device_reset()
 	m_a7 = 0;
 }
 
-void duscc_channel::device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr)
+void duscc_channel::device_timer(emu_timer &timer, device_timer_id id, int param)
 {
 	switch(id)
 	{
